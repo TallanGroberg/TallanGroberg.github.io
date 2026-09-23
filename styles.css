@@ -272,6 +272,11 @@ section { padding: 96px 0; }
 .ml-embed-wrap { font-family: "Space Grotesk", system-ui, sans-serif; }
 .ml-embed-wrap input, .ml-embed-wrap button { font-family: inherit; }
 
+/* ---------- support ---------- */
+.support { text-align: center; }
+.support .rule { margin-left: auto; margin-right: auto; }
+.support .sec-head p { margin-left: auto; margin-right: auto; }
+
 /* ---------- newsletter modal ---------- */
 .nl-modal {
   position: fixed;
