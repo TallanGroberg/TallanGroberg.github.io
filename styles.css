@@ -259,6 +259,19 @@ section { padding: 96px 0; }
 .cta h2 { font-size: clamp(2rem, 4vw, 2.8rem); margin-bottom: 12px; }
 .cta p { color: var(--ink-dim); margin-bottom: 28px; }
 
+/* ---------- newsletter ---------- */
+.newsletter { background: var(--bg-soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.newsletter-card {
+  max-width: 620px;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 52px 48px;
+  background: radial-gradient(ellipse at center, rgba(127,212,193,0.07), transparent 65%), var(--card);
+}
+.ml-embed-wrap { font-family: "Space Grotesk", system-ui, sans-serif; }
+.ml-embed-wrap input, .ml-embed-wrap button { font-family: inherit; }
+
 /* ---------- footer ---------- */
 footer { border-top: 1px solid var(--line); padding: 44px 0; color: var(--ink-dim); font-size: 0.9rem; }
 .foot-inner { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
