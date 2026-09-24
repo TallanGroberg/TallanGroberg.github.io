@@ -174,6 +174,51 @@ section { padding: 96px 0; }
 }
 .tile:hover figcaption { opacity: 1; }
 
+/* video tiles */
+.vtile {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  cursor: pointer;
+  aspect-ratio: 9 / 16;
+}
+.vtile video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.vtile figcaption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 34px 16px 14px;
+  font-size: 0.92rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.78), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.vtile:hover figcaption, .vtile.unmuted figcaption { opacity: 1; }
+.vtile .snd {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.vtile:hover .snd, .vtile.unmuted .snd { opacity: 1; }
+
 /* lightbox */
 .lightbox {
   position: fixed;
