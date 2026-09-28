@@ -2,6 +2,7 @@
 const lightbox = document.getElementById('lightbox');
 const lightboxImg = document.getElementById('lightbox-img');
 const lightboxCap = document.getElementById('lightbox-cap');
+const lightboxPrint = document.getElementById('lightbox-print');
 
 document.querySelectorAll('.tile').forEach(tile => {
   tile.addEventListener('click', () => {
@@ -9,6 +10,12 @@ document.querySelectorAll('.tile').forEach(tile => {
     lightboxImg.src = img.src;
     lightboxImg.alt = img.alt;
     lightboxCap.textContent = tile.dataset.title || img.alt;
+    if (tile.dataset.print) {
+      lightboxPrint.href = tile.dataset.print;
+      lightboxPrint.classList.add('show');
+    } else {
+      lightboxPrint.classList.remove('show');
+    }
     lightbox.classList.add('open');
     document.body.style.overflow = 'hidden';
   });
@@ -24,6 +31,11 @@ if (lightbox) {
     if (e.key === 'Escape') closeLightbox();
   });
 }
+
+// merch links inside tiles — don't trigger the lightbox
+document.querySelectorAll('.merch-link').forEach(a => {
+  a.addEventListener('click', e => e.stopPropagation());
+});
 
 // animation tiles — tap toggles sound
 document.querySelectorAll('.vtile').forEach(tile => {
@@ -90,6 +102,7 @@ if (nlModal) {
   if (nlClose) nlClose.addEventListener('click', closeNlModal);
   nlModal.addEventListener('click', e => {
     if (e.target === nlModal) closeNlModal();
+    document.body.style.overflow = '';
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && nlModal.classList.contains('open')) closeNlModal();
