@@ -29,7 +29,7 @@ body::before {
   background-image:
     radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.5), transparent),
     radial-gradient(1px 1px at 68% 8%, rgba(255,255,255,.4), transparent),
-    radial-gradient(1.5px 1.5px at 84% 34%, rgba(255,255,255,.35), transparent),
+    radial-gradient(1.5px 1px at 84% 34%, rgba(255,255,255,.35), transparent),
     radial-gradient(1px 1px at 32% 66%, rgba(255,255,255,.3), transparent),
     radial-gradient(1px 1px at 52% 88%, rgba(255,255,255,.4), transparent),
     radial-gradient(2px 2px at 90% 72%, rgba(255,255,255,.3), transparent),
@@ -173,6 +173,18 @@ section { padding: 96px 0; }
   transition: opacity 0.3s;
 }
 .tile:hover figcaption { opacity: 1; }
+.merch-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+  padding-bottom: 1px;
+}
+.merch-link:hover { color: #93e0cf; border-color: #93e0cf; }
 
 /* video tiles */
 .vtile {
@@ -241,6 +253,8 @@ section { padding: 96px 0; }
   object-fit: contain;
 }
 .lightbox p { margin-top: 16px; color: var(--ink-dim); font-family: "Cormorant Garamond", serif; font-size: 1.25rem; }
+#lightbox-print { display: none; margin-top: 14px; }
+#lightbox-print.show { display: inline-block; }
 .lightbox .close {
   position: absolute;
   top: 22px;
@@ -253,7 +267,7 @@ section { padding: 96px 0; }
 
 /* ---------- about ---------- */
 .about { background: var(--bg-soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
-.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
+.about-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 56px; align-items: start; }
 .about-grid p { color: var(--ink-dim); margin-bottom: 18px; }
 .about-grid p strong { color: var(--ink); font-weight: 600; }
 .facts { list-style: none; margin-top: 26px; display: grid; gap: 12px; }
