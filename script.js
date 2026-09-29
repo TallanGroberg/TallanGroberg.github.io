@@ -1,40 +1,6 @@
-// lightbox
-const lightbox = document.getElementById('lightbox');
-const lightboxImg = document.getElementById('lightbox-img');
-const lightboxCap = document.getElementById('lightbox-cap');
-const lightboxPrint = document.getElementById('lightbox-print');
-const lightboxDetails = document.getElementById('lightbox-details');
 
-document.querySelectorAll('.tile').forEach(tile => {
-  tile.addEventListener('click', () => {
-    const img = tile.querySelector('img');
-    lightboxImg.src = img.src;
-    lightboxImg.alt = img.alt;
-    lightboxCap.textContent = tile.dataset.title || img.alt;
-    if (tile.dataset.print) {
-      lightboxPrint.href = tile.dataset.print;
-      lightboxPrint.classList.add('show');
-    } else {
-      lightboxPrint.classList.remove('show');
-    }
-    lightboxDetails.href = tile.dataset.page || 'index.html#gallery';
-    lightbox.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  });
-});
 
-function closeLightbox() {
-  lightbox.classList.remove('open');
-  document.body.style.overflow = '';
-}
-if (lightbox) {
-  lightbox.addEventListener('click', closeLightbox);
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeLightbox();
-  });
-}
-
-// merch links inside tiles — don't trigger the lightbox
+// merch links inside video tiles — don't toggle the sound
 document.querySelectorAll('.merch-link').forEach(a => {
   a.addEventListener('click', e => e.stopPropagation());
 });
