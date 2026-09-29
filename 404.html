@@ -150,6 +150,38 @@ footer .foot-inner { display: flex; justify-content: space-between; color: var(-
 #inv-touch .btn { flex: 1; padding: 14px 0; font-size: 1.15rem; }
 @media (pointer: coarse) { #inv-touch { display: flex; } }
 @media (max-width: 720px) { .boards { gap: 32px; } }
+
+/* victory signup modal */
+.win-modal {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(3, 3, 6, 0.92);
+  display: none; align-items: center; justify-content: center; padding: 24px;
+}
+.win-modal.open { display: flex; }
+.win-modal-card {
+  position: relative; width: 100%; max-width: 460px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+  padding: 40px 34px 28px; text-align: center;
+}
+.win-modal-card .kicker { margin-bottom: 10px; }
+.win-modal-card h2 {
+  font-family: "Cormorant Garamond", serif; font-weight: 500;
+  font-size: 2rem; margin-bottom: 12px;
+}
+.win-modal-card p { color: var(--ink-dim); line-height: 1.6; margin-bottom: 20px; }
+.win-modal-card .ml-embed-wrap { max-width: 380px; margin: 0 auto; }
+.win-modal-close {
+  position: absolute; top: 8px; right: 16px;
+  background: none; border: none; color: var(--ink-dim);
+  font-size: 1.8rem; line-height: 1; cursor: pointer;
+}
+.win-modal-close:hover { color: var(--ink); }
+.win-dismiss {
+  background: none; border: none; cursor: pointer;
+  color: var(--ink-dim); font-size: 0.85rem; margin-top: 16px;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.win-dismiss:hover { color: var(--ink); }
 </style>
 <script type="text/javascript">
     (function(c,l,a,r,i,t,y){
@@ -192,7 +224,7 @@ footer .foot-inner { display: flex; justify-content: space-between; color: var(-
 
     <div id="game-invaders">
       <h2 class="battle-head">Space Invaders</h2>
-      <p class="phase-sub">The swarm is coming through the dark. Arrow keys or A/D to move, Space to fire. On touch screens, use the buttons below the game.</p>
+      <p class="phase-sub">The swarm is coming through the dark. Arrow keys or A/D to move, Space to fire. Clear 3 waves to secure the sector. On touch screens, use the buttons below the game.</p>
       <div class="inv-hud">
         <span>Score<strong id="inv-score">0</strong></span>
         <span>Wave<strong id="inv-wave">1</strong></span>
@@ -262,6 +294,29 @@ footer .foot-inner { display: flex; justify-content: space-between; color: var(-
     </div>
   </div>
 </main>
+
+<!-- MailerLite Universal -->
+<script>
+    (function(w,d,e,u,f,l,n){w[f]=w[f]||function(){(w[f].q=w[f].q||[])
+    .push(arguments);},l=d.createElement(e),l.async=1,l.src=u,
+    n=d.getElementsByTagName(e)[0],n.parentNode.insertBefore(l,n);})
+    (window,document,'script','https://assets.mailerlite.com/js/universal.js','ml');
+    ml('account', '2654399');
+</script>
+<!-- End MailerLite Universal -->
+
+<div class="win-modal" id="win-modal" role="dialog" aria-modal="true" aria-label="Victory, join the mailing list">
+  <div class="win-modal-card">
+    <button class="win-modal-close" id="win-modal-close" aria-label="Close">×</button>
+    <div class="kicker">Victory</div>
+    <h2>You won the sector.</h2>
+    <p>New art lands every Thursday. Join the mailing list and never miss a piece.</p>
+    <div class="ml-embed-wrap">
+      <div class="ml-embedded" data-form="5C1WKt"></div>
+    </div>
+    <button class="win-dismiss" id="win-dismiss">No thanks</button>
+  </div>
+</div>
 
 <footer>
   <div class="wrap foot-inner">
@@ -561,6 +616,7 @@ footer .foot-inner { display: flex; justify-content: space-between; color: var(-
     document.getElementById("result-sub").textContent = won
       ? "The enemy fleet is space dust. Somewhere out there, the page you wanted is still missing, but this victory is real."
       : "Your fleet is gone, swallowed by the dark between stars. The missing page remains missing. Regroup and try again.";
+    if (won) setTimeout(function () { window.showWinSignup(); }, 1500);
   }
   document.getElementById("btn-again").addEventListener("click", function () {
     player = newBoard();
@@ -788,10 +844,17 @@ var Invaders = (function () {
   }
 
   function nextWave() {
+    if (wave >= 3) { victory(); return; }
     wave++; updateHUD();
     buildSwarm(); ebullets = []; enemyFireT = 1;
     waveMsgT = 2;
     msg("Wave " + wave + ". They are faster now.");
+  }
+  function victory() {
+    state = "won";
+    msg("Sector cleared! Three waves destroyed. Final score: " + score + ".");
+    startBtn.textContent = "Play again";
+    setTimeout(function () { window.showWinSignup(); }, 1500);
   }
   function gameOver(invaded) {
     state = "over";
@@ -939,6 +1002,28 @@ var Invaders = (function () {
       touchL = touchR = touchFire = false;
     }
   };
+})();
+
+/* victory mailing-list prompt: shown at most once per session */
+(function () {
+  var KEY = "win-prompt-shown";
+  var modal = document.getElementById("win-modal");
+  function alreadyShown() {
+    try { return sessionStorage.getItem(KEY) === "1"; }
+    catch (e) { return false; }
+  }
+  window.showWinSignup = function () {
+    if (!modal || alreadyShown()) return;
+    try { sessionStorage.setItem(KEY, "1"); } catch (e) {}
+    modal.classList.add("open");
+  };
+  function close() { modal.classList.remove("open"); }
+  document.getElementById("win-modal-close").addEventListener("click", close);
+  document.getElementById("win-dismiss").addEventListener("click", close);
+  modal.addEventListener("click", function (e) { if (e.target === modal) close(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && modal.classList.contains("open")) close();
+  });
 })();
 
 (function () {
