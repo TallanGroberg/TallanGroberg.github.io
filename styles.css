@@ -233,6 +233,14 @@ section { padding: 96px 0; }
 }
 .vtile:hover .snd, .vtile.unmuted .snd { opacity: 1; }
 
+/* ---------- animation gallery teaser ---------- */
+.anim-banner { position: relative; display: block; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); min-height: 340px; text-decoration: none; }
+.anim-banner > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.anim-banner::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to right, rgba(6,6,9,0.9) 25%, rgba(6,6,9,0.35)); }
+.anim-banner-text { position: relative; z-index: 1; padding: 60px 52px; max-width: 600px; }
+.anim-banner-text h2 { font-size: clamp(2rem, 4vw, 2.9rem); margin-bottom: 10px; }
+.anim-banner-text p { color: var(--ink-dim); margin-bottom: 26px; }
+
 /* ---------- about ---------- */
 .about { background: var(--bg-soft); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; align-items: start; }
@@ -442,4 +450,6 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; color: var(--ink-di
   .newsletter-card { padding: 36px 24px; }
   .support-callout { padding: 24px 20px; }
   .artwork-body h1 { font-size: 2.1rem; }
+  .anim-banner-text { padding: 40px 28px; }
+  .anim-banner { min-height: 0; }
 }
