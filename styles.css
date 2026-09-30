@@ -70,6 +70,7 @@ nav {
   font-size: 1.35rem;
   letter-spacing: 0.04em;
   text-decoration: none;
+  white-space: nowrap;
 }
 .brand em { color: var(--accent); font-style: normal; }
 .nav-links { display: flex; gap: 28px; list-style: none; }
@@ -421,8 +422,6 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; color: var(--ink-di
   .steps { grid-template-columns: repeat(2, 1fr); }
   .about-grid { grid-template-columns: 1fr; }
   .terms { columns: 1; }
-}
-@media (max-width: 640px) {
   .nav-links {
     display: none;
     position: absolute;
@@ -435,6 +434,14 @@ footer { border-top: 1px solid var(--line); padding: 44px 0; color: var(--ink-di
   }
   .nav-links.open { display: flex; }
   .menu-btn { display: block; }
+}
+@media (max-width: 640px) {
   .grid { grid-template-columns: 1fr; }
   section { padding: 64px 0; }
+  .steps { grid-template-columns: 1fr; }
+  .newsletter-card { padding: 36px 24px; }
+  .support-callout { padding: 24px 20px; }
+  .artwork-body h1 { font-size: 2.1rem; }
+  .artwork-pager { flex-direction: column; gap: 18px; }
+  .artwork-pager a:last-child { text-align: left; }
 }
