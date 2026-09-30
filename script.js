@@ -24,3 +24,12 @@ if (menuBtn && navLinks) {
 // footer year
 const yr = document.getElementById('year');
 if (yr) yr.textContent = new Date().getFullYear();
+
+// sci-fi shorts: tap a tile to start its video (covers phones that block autoplay)
+document.querySelectorAll('.vtile').forEach(tile => {
+  const v = tile.querySelector('video');
+  if (!v) return;
+  tile.addEventListener('click', () => {
+    if (v.paused) v.play().catch(() => {});
+  });
+});
