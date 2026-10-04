@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Fractal Explorer Mod - living 3D fractals</title>
+<style>
+  html, body { margin:0; padding:0; background:#05070c; min-height:100%;
+    font-family: Georgia, 'Times New Roman', serif; color:#e8e4da; }
+  body { display:flex; flex-direction:column; align-items:center; padding:22px 12px 40px; box-sizing:border-box; }
+  h1 { margin:6px 0 2px; font-size:21px; letter-spacing:3px; font-weight:normal; color:#f2ead8; text-align:center; }
+  #sub { margin:0 0 16px; font-size:12.5px; letter-spacing:1.5px; color:#9db8b4; text-align:center; }
+  #stage { width:min(1150px, 94vw); height:64vh; border:1px solid rgba(140,190,180,.4); border-radius:10px;
+    box-shadow:0 14px 44px rgba(0,0,0,.6); overflow:hidden; background:#070a12;
+    position:sticky; top:8px; z-index:20; touch-action:none; cursor:grab; }
+  #stage:active { cursor:grabbing; }
+  #bar { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; margin:16px 0 6px; }
+  .btn { cursor:pointer; background:#14202e; color:#a8e6d9; border:1px solid rgba(140,220,200,.5);
+    border-radius:999px; padding:9px 18px; font-family:Georgia,serif; font-size:13.5px; letter-spacing:.5px; }
+  .btn:active { transform:scale(.97); }
+  .chk { display:flex; align-items:center; gap:8px; font-size:13px; color:#cfe0da; }
+  .chk input { accent-color:#2ea89a; width:16px; height:16px; }
+  #info { font-size:12px; color:#8496a8; letter-spacing:.5px; width:100%; text-align:center; }
+  #controls { margin-top:10px; width:min(680px, 94vw); background:rgba(10,16,26,.85);
+    border:1px solid rgba(140,190,180,.3); border-radius:14px; padding:14px 20px 8px;
+    display:grid; grid-template-columns:1fr 1fr; gap:4px 28px; box-sizing:border-box; }
+  @media (max-width:560px) { #controls { grid-template-columns:1fr; } }
+  .ctl { margin-bottom:10px; }
+  .ctl label { display:flex; justify-content:space-between; font-size:12px; letter-spacing:1px; color:#9db8b4; margin-bottom:3px; }
+  .ctl label span { color:#f2ead8; letter-spacing:0; }
+  .ctl input[type="range"] { width:100%; accent-color:#2ea89a; }
+  .ctl select { width:100%; background:#101a2a; color:#d8e4da; border:1px solid rgba(140,190,180,.4); border-radius:6px; padding:6px; font-family:Georgia,serif; font-size:13px; }
+  .sec { grid-column:1 / -1; margin:14px 0 2px; font-size:11px; letter-spacing:2.5px; color:#59f2d6; border-top:1px solid rgba(140,190,180,.25); padding-top:12px; }
+  #note { font-size:12px; color:#6d8093; text-align:center; max-width:560px; line-height:1.55; margin:14px 0 0; }
+</style>
+</head>
+<body>
+<h1>FRACTAL EXPLORER MOD</h1>
+<p id="sub">living fractals, every warp and carve included</p>
+
+<div id="stage"></div>
+
+<div id="bar">
+  <div class="chk"><input id="spin" type="checkbox" checked><span>Slowly rotate</span></div>
+  <div class="chk"><input id="flow" type="checkbox"><span>Color flow</span></div>
+  <div class="chk"><input id="animform" type="checkbox"><span>Living form</span></div>
+  <button class="btn" id="resetview">Reset view</button>
+  <button class="btn" id="exportstl">Export STL (3D print)</button>
+  <button class="btn" id="exportglb">Export GLB (for Nomad)</button>
+  <div id="info">Drag to orbit. Scroll or pinch to zoom.</div>
+</div>
+
+<div id="controls">
+  <div class="ctl"><label>FRACTAL</label>
+    <select id="ftype">
+      <option value="0">Sierpinski pyramid</option>
+      <option value="1">Crystal octahedron</option>
+      <option value="2">Cube lattice</option>
+      <option value="3">Icosahedron crystal</option>
+      <option value="4">Mandelbulb</option>
+      <option value="5">Julia slice</option>
+    </select></div>
+  <div class="ctl"><label>COLORING</label>
+    <select id="pal">
+      <option value="0">Rainbow depth</option>
+      <option value="1">Ember</option>
+      <option value="2">Glacier</option>
+      <option value="3">Ultraviolet</option>
+    </select></div>
+  <div class="ctl"><label>DEPTH (ITERATIONS) <span id="v-iter">10</span></label>
+    <input id="iter" type="range" min="2" max="20" step="1" value="10"></div>
+  <div class="ctl"><label>SCALE <span id="v-scale">2.00</span></label>
+    <input id="fscale" type="range" min="1.55" max="2.45" step="0.01" value="2"></div>
+  <div class="ctl"><label>TWIST PER LEVEL <span id="v-twist">0&deg;</span></label>
+    <input id="twist" type="range" min="-35" max="35" step="0.5" value="0"></div>
+  <div class="ctl"><label>COLOR SPREAD <span id="v-spread">1.2</span></label>
+    <input id="spread" type="range" min="0.2" max="3" step="0.05" value="1.2"></div>
+  <div class="ctl"><label>RIM GLOW <span id="v-glow">40%</span></label>
+    <input id="glow" type="range" min="0" max="100" value="40"></div>
+  <div class="ctl"><label>LEAN <span id="v-lean">0%</span></label>
+    <input id="lean" type="range" min="-100" max="100" value="0"></div>
+  <div class="ctl"><label>BULGE <span id="v-bulge">0%</span></label>
+    <input id="bulge" type="range" min="-60" max="60" value="0"></div>
+  <div class="ctl"><label>SQUASH <span id="v-squash">1.00</span></label>
+    <input id="squash" type="range" min="45" max="220" value="100"></div>
+  <div class="ctl"><label>TUMBLE <span id="v-tumble">0&deg;</span></label>
+    <input id="tumble" type="range" min="-35" max="35" step="0.5" value="0"></div>
+  <div class="ctl"><label>MORPH INTO</label>
+    <select id="mtype">
+      <option value="0">Sierpinski pyramid</option>
+      <option value="1">Crystal octahedron</option>
+      <option value="2" selected>Cube lattice</option>
+      <option value="3">Icosahedron crystal</option>
+      <option value="4">Mandelbulb</option>
+      <option value="5">Julia slice</option>
+    </select></div>
+  <div class="ctl"><label>MORPH <span id="v-morph">0%</span></label>
+    <input id="morph" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>LIGHT ANGLE <span id="v-lang2">40&deg;</span></label>
+    <input id="lang2" type="range" min="0" max="360" value="40"></div>
+  <div class="ctl"><label>FOG DEPTH <span id="v-fog">55%</span></label>
+    <input id="fog" type="range" min="0" max="100" value="55"></div>
+  <div class="ctl"><label>EDGE GLOW <span id="v-eglow">0%</span></label>
+    <input id="eglow" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>COLOR BY LEVEL <span id="v-band">0%</span></label>
+    <input id="band" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>STRIPE <span id="v-stripe">0%</span></label>
+    <input id="stripe" type="range" min="0" max="100" value="0"></div>
+  <div class="sec">FORM LAB: SINE AND SPACE (all start off)</div>
+  <div class="ctl"><label>WAVE WARP <span id="v-wave">0%</span></label>
+    <input id="wave" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>WAVE FREQUENCY <span id="v-wavef">3.0</span></label>
+    <input id="wavef" type="range" min="0.5" max="12" step="0.1" value="3"></div>
+  <div class="ctl"><label>LEVEL PULSE <span id="v-pulse">0%</span></label>
+    <input id="pulse" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>PULSE RATE <span id="v-pulserate">1.2</span></label>
+    <input id="pulserate" type="range" min="0.3" max="3" step="0.1" value="1.2"></div>
+  <div class="ctl"><label>SINE FLUTING <span id="v-flute">0%</span></label>
+    <input id="flute" type="range" min="0" max="60" value="0"></div>
+  <div class="ctl"><label>FLUTE FREQUENCY <span id="v-flutef">14</span></label>
+    <input id="flutef" type="range" min="2" max="40" step="0.5" value="14"></div>
+  <div class="ctl"><label>SPATIAL MORPH <span id="v-smorph">0%</span></label>
+    <input id="smorph" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>RADIAL SYMMETRY <span id="v-radial">off</span></label>
+    <input id="radial" type="range" min="1" max="16" step="1" value="1"></div>
+  <div class="sec">FORM LAB: FIELDS AND FLESH</div>
+  <div class="ctl"><label>NOISE BEND <span id="v-noiseb">0%</span></label>
+    <input id="noiseb" type="range" min="0" max="90" value="0"></div>
+  <div class="ctl"><label>NOISE SCALE <span id="v-noises">1.6</span></label>
+    <input id="noises" type="range" min="0.5" max="5" step="0.1" value="1.6"></div>
+  <div class="ctl"><label>GYROID LATTICE <span id="v-gyroid">0%</span></label>
+    <input id="gyroid" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>GYROID SCALE <span id="v-gyros">4.00</span></label>
+    <input id="gyros" type="range" min="1" max="10" step="0.25" value="4"></div>
+  <div class="ctl"><label>WORLEY CARVE <span id="v-worley">0%</span></label>
+    <input id="worley" type="range" min="0" max="90" value="0"></div>
+  <div class="ctl"><label>WORLEY SCALE <span id="v-wors">2.4</span></label>
+    <input id="wors" type="range" min="0.8" max="6" step="0.1" value="2.4"></div>
+  <div class="ctl"><label>SHELL WALL <span id="v-shell">0%</span></label>
+    <input id="shell" type="range" min="0" max="45" value="0"></div>
+  <div class="ctl"><label>SPHERE INVERSION <span id="v-invert">0%</span></label>
+    <input id="invert" type="range" min="0" max="100" value="0"></div>
+  <div class="sec">FORM LAB: SCULPT AND BEYOND</div>
+  <div class="ctl"><label>SCULPT</label>
+    <select id="csgsel">
+      <option value="0" selected>Off</option>
+      <option value="1">Add orb</option>
+      <option value="2">Carve orb</option>
+      <option value="3">Intersect orb</option>
+      <option value="4">Slice level</option>
+    </select></div>
+  <div class="ctl"><label>SCULPT SIZE <span id="v-csgsize">1.10</span></label>
+    <input id="csgsize" type="range" min="0.2" max="2.4" step="0.05" value="1.1"></div>
+  <div class="ctl"><label>SCULPT HEIGHT <span id="v-csgh">0.00</span></label>
+    <input id="csgh" type="range" min="-1.5" max="1.5" step="0.05" value="0"></div>
+  <div class="ctl"><label>REPEAT SPACING <span id="v-repeat">off</span></label>
+    <input id="repeat" type="range" min="0" max="8" step="0.25" value="0"></div>
+  <div class="ctl"><label>4D SLICE (JULIA) <span id="v-juliaw">0%</span></label>
+    <input id="juliaw" type="range" min="-100" max="100" value="0"></div>
+  <div class="ctl"><label>RESOLUTION</label>
+    <select id="resmode">
+      <option value="auto" selected>Auto (smooth)</option>
+      <option value="1.5">Crisp 1.5x</option>
+      <option value="2">Sharp 2x</option>
+      <option value="3">Ultra 3x</option>
+    </select></div>
+  <div class="ctl"><label>EXPORT DETAIL <span id="v-exd">128</span></label>
+    <input id="exd" type="range" min="32" max="224" step="8" value="128"></div>
+  <div class="ctl"><label>SMOOTH FOR SCULPTING</label>
+    <div class="chk"><input id="smooth" type="checkbox" checked><span>Even surface for Nomad</span></div></div>
+  <div class="ctl"><label>ZOOM <span id="v-zoom">3.6</span></label>
+    <input id="zoom" type="range" min="1.6" max="8" step="0.05" value="3.6"></div>
+</div>
+
+<p id="note">Nothing here is a mesh. A shader walks light rays through the fractal's own mathematics and stops where they land,
+so the detail never runs out and every slider reshapes the structure itself. Drag the depth up and watch new levels bloom;
+bend the scale away from 2.00 and the pyramid fattens or starves; twist makes it corkscrew through its own levels.
+Color comes from how deep inside the structure each point lives, like the rainbow print that inspired this.
+The workshop sliders reshape the math itself: Lean grows it crooked, Bulge fattens or erodes it, Squash flattens or stretches it,
+Tumble braids the levels sideways, and Morph melts one fractal into another. Light angle swings the sun, fog depth swallows the
+deep levels, edge glow lights the thin struts from inside, color by level bands the rainbow level by level like the print,
+and stripe wraps it in contour rings. Resolution trades speed for sharpness: Auto keeps it smooth on any device, and the fixed
+settings supersample the render so edges come out carved instead of soft. Export STL carves the exact shape on screen into a real
+mesh using the same mathematics, ready for a slicer and a printer. Higher export detail means a finer mesh and a longer wait.
+The Form Lab bends the space the fractal lives in: sine waves warp and flute it, level pulse makes every level breathe at a
+different size, noise bends it off true, gyroid and worley turn it to lattice and honeycomb, sculpt adds or carves an orb,
+shell hollows it into a wall, and radial symmetry, repetition, and inversion rebuild its whole arrangement. Every Form Lab
+tool starts at off, so nothing changes until you invite it in. Living form sets the waves in motion. The STL exporter reads
+the same Form Lab settings, so what you print is what you see. Exports now carve at up to 224 resolution with an even,
+smoothed surface: take the GLB into Nomad Sculpt on the iPad for the friendliest editing, or the STL to any slicer.
+High detail takes a while to carve; that patience is the mesh being built to last.</p>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+stage.appendChild(renderer.domElement);
+
+const FRAG = `
+precision highp float;
+uniform vec2 uRes;
+uniform vec3 uCamPos, uCamRight, uCamUp, uCamFwd;
+uniform int uType, uIter;
+uniform float uScale, uTwist, uSpread, uGlowAmt, uPhase;
+uniform int uPal;
+uniform int uTypeB;
+uniform float uLean, uBulge, uSquash, uTumble, uMorph;
+uniform float uDetail;
+uniform float uEdgeGlow, uLightAng, uFog, uBand, uStripe;
+uniform float uWave, uWaveF, uPulse, uPulseRate, uAnim, uFlute, uFluteF;
+uniform float uNoiseB, uNoiseS, uGyroid, uGyroS, uWorley, uWorlS, uShell;
+uniform float uRadial, uRepeat, uInvert, uSmorph, uCSG, uCSGSize, uCSGY, uJuliaW, uStep;
+
+float gTrap;
+float gLevel;
+float gSteps;
+
+mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0.,s, 0.,1.,0., -s,0.,c); }
+mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1.,0.,0., 0.,c,s, 0.,-s,c); }
+mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,s,0., -s,c,0., 0.,0.,1.); }
+
+float hash13(vec3 p){
+  p = fract(p * 0.3183099 + vec3(0.11, 0.17, 0.13));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float vnoise(vec3 p){
+  vec3 i = floor(p), f = fract(p);
+  f = f * f * (3.0 - 2.0 * f);
+  float n000 = hash13(i), n100 = hash13(i + vec3(1.,0.,0.));
+  float n010 = hash13(i + vec3(0.,1.,0.)), n110 = hash13(i + vec3(1.,1.,0.));
+  float n001 = hash13(i + vec3(0.,0.,1.)), n101 = hash13(i + vec3(1.,0.,1.));
+  float n011 = hash13(i + vec3(0.,1.,1.)), n111 = hash13(i + vec3(1.,1.,1.));
+  return mix(mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+             mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y), f.z);
+}
+float fbm3(vec3 p){
+  float s = 0.0, a = 0.5;
+  for(int i=0; i<4; i++){ s += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return s;
+}
+vec3 hash33(vec3 p3){
+  p3 = fract(p3 * vec3(0.1031, 0.1030, 0.0973));
+  p3 += dot(p3, p3.yxz + 33.33);
+  return fract((p3.xxy + p3.yxx) * p3.zyx);
+}
+vec2 worley2(vec3 p){
+  vec3 ip = floor(p);
+  float f1 = 8.0, f2 = 8.0;
+  for(int i=-1; i<=1; i++) for(int j=-1; j<=1; j++) for(int k=-1; k<=1; k++){
+    vec3 g = vec3(float(i), float(j), float(k));
+    vec3 o = hash33(ip + g);
+    float d = length(g + o - fract(p));
+    if(d < f1){ f2 = f1; f1 = d; } else if(d < f2){ f2 = d; }
+  }
+  return vec2(f1, f2);
+}
+vec4 qmul(vec4 a, vec4 b){
+  return vec4(a.x * b.x - dot(a.yzw, b.yzw),
+              a.x * b.yzw + b.x * a.yzw + cross(a.yzw, b.yzw));
+}
+
+float deTyped(vec3 p, int type, out float trap, out float level){
+  vec3 offs = vec3(1.0) + uLean * vec3(1.0, 0.35, -0.65);
+  mat3 tw = rotY(uTwist);
+  mat3 tx = rotX(uTumble);
+  mat3 tz = rotZ(uTumble * 0.7);
+  trap = 1e9; level = 0.0;
+  float invDr = 1.0;
+  for(int n=0; n<24; n++){
+    if(n >= uIter) break;
+    if(type == 0){
+      if(p.x + p.y < 0.0) p.xy = -p.yx;
+      if(p.x + p.z < 0.0) p.xz = -p.zx;
+      if(p.y + p.z < 0.0) p.yz = -p.zy;
+    } else if(type == 1){
+      p = abs(p);
+      if(p.x < p.y) p.xy = p.yx;
+      if(p.x < p.z) p.xz = p.zx;
+      if(p.y < p.z) p.yz = p.zy;
+    } else if(type == 3){
+      p = abs(p);
+      vec3 nrm;
+      nrm = normalize(vec3(1.0, 1.618034, 0.0));
+      if(dot(p, nrm) < 0.0) p -= 2.0 * dot(p, nrm) * nrm;
+      nrm = normalize(vec3(0.0, 1.0, 1.618034));
+      if(dot(p, nrm) < 0.0) p -= 2.0 * dot(p, nrm) * nrm;
+      nrm = normalize(vec3(1.618034, 0.0, 1.0));
+      if(dot(p, nrm) < 0.0) p -= 2.0 * dot(p, nrm) * nrm;
+      p = abs(p);
+    } else {
+      p = abs(p);
+      if(p.x < p.y) p.xy = p.yx;
+      if(p.y < p.z) p.yz = p.zy;
+    }
+    if(uTwist != 0.0 || uTumble != 0.0) p = tz * tx * tw * p;
+    float pul = uPulse * sin(float(n) * uPulseRate + uAnim * 0.7);
+    if(uPulse > 0.001) p = rotY(pul * 0.6) * p;
+    if(uWave > 0.001){
+      p += uWave * 0.06 * vec3(
+        sin(p.y * uWaveF + uAnim + float(n) * 1.7),
+        sin(p.z * uWaveF * 1.13 + uAnim),
+        sin(p.x * uWaveF * 0.91 + uAnim));
+    }
+    float effScale = uScale * (1.0 + 0.28 * pul);
+    vec3 offsEff = offs * (1.0 + 0.3 * uPulse * sin(float(n) * uPulseRate + 2.1 + uAnim * 0.7));
+    p = p * effScale - offsEff * (effScale - 1.0);
+    invDr /= effScale;
+    float l = length(p);
+    if(l < trap){ trap = l; level = float(n); }
+  }
+  return (length(p) - 0.35 - uBulge) * invDr;
+}
+
+float deBulb(vec3 p, out float trap){
+  vec3 z = p;
+  float dr = 1.0, r = 0.0;
+  trap = 1e9;
+  float power = 6.0 + uScale * 1.5;
+  for(int i=0; i<16; i++){
+    r = length(z);
+    trap = min(trap, r);
+    if(r > 2.0) break;
+    float th = acos(clamp(z.z / max(r, 1e-6), -1.0, 1.0));
+    float ph = atan(z.y, z.x);
+    dr = pow(r, power - 1.0) * power * dr + 1.0;
+    float zr = pow(r, power);
+    th *= power; ph *= power;
+    z = zr * vec3(sin(th) * cos(ph), sin(ph) * sin(th), cos(th));
+    z += p;
+  }
+  return 0.5 * log(max(r, 1e-4)) * r / max(dr, 1e-4);
+}
+
+float deJulia(vec3 p, out float trap){
+  vec4 z = vec4(p, uJuliaW);
+  vec4 dz = vec4(1.0, 0.0, 0.0, 0.0);
+  vec4 c = vec4(-0.18, 0.62, 0.12, 0.05);
+  float r = length(z);
+  trap = r;
+  for(int i=0; i<14; i++){
+    dz = 2.0 * qmul(z, dz);
+    z = qmul(z, z) + c;
+    r = length(z);
+    trap = min(trap, r);
+    if(r > 4.0) break;
+  }
+  return 0.5 * log(max(r, 1e-4)) * r / max(length(dz), 1e-4);
+}
+
+float deAny(vec3 p, int type, out float trap, out float level){
+  if(type == 4){ float d = deBulb(p, trap); level = clamp(trap * 4.0, 0.0, 20.0); return d; }
+  if(type == 5){ float d = deJulia(p, trap); level = clamp(trap * 4.0, 0.0, 20.0); return d; }
+  return deTyped(p, type, trap, level);
+}
+
+float de(vec3 p){
+  vec3 q = p;
+  q.y *= uSquash;
+  if(uRadial > 1.5){
+    float ang = atan(q.z, q.x);
+    float sec = 6.28318 / uRadial;
+    ang = mod(ang, sec) - sec * 0.5;
+    float rr = length(q.xz);
+    q.x = cos(ang) * rr;
+    q.z = sin(ang) * rr;
+  }
+  if(uInvert > 0.001){
+    vec3 qi = q * (2.56 / max(dot(q, q), 0.05));
+    q = mix(q, qi, uInvert);
+  }
+  if(uRepeat > 0.01){
+    q = mod(q + 0.5 * uRepeat, uRepeat) - 0.5 * uRepeat;
+  }
+  if(uNoiseB > 0.001){
+    vec3 nb = vec3(fbm3(q * uNoiseS + 11.1), fbm3(q * uNoiseS + 27.7), fbm3(q * uNoiseS + 43.3)) - 0.47;
+    q += nb * uNoiseB * 1.5;
+  }
+  if(uWave > 0.001){
+    q += uWave * 0.22 * vec3(
+      sin(q.y * uWaveF + uAnim),
+      sin(q.z * uWaveF * 1.13 + uAnim * 1.3),
+      sin(q.x * uWaveF * 0.91 + uAnim * 0.7));
+  }
+  float trapA, levelA;
+  float dA = deAny(q, uType, trapA, levelA);
+  float m = uMorph;
+  if(uSmorph > 0.001){
+    m = clamp(m + uSmorph * sin(dot(p, vec3(0.7, 1.0, 0.45)) * 2.6 + uAnim), 0.0, 1.0);
+  }
+  float d = dA, trap = trapA, level = levelA;
+  if(m > 0.001){
+    float trapB, levelB;
+    float dB = deAny(q, uTypeB, trapB, levelB);
+    d = mix(dA, dB, m);
+    trap = mix(trapA, trapB, m);
+    level = mix(levelA, levelB, m);
+  }
+  if(uFlute > 0.001){
+    d -= uFlute * 0.055 * sin(p.y * uFluteF + length(p.xz) * uFluteF * 0.35 + uAnim);
+  }
+  if(uGyroid > 0.001){
+    float gf = uGyroS * 1.35;
+    float G = sin(q.x * gf) * cos(q.y * gf) + sin(q.y * gf) * cos(q.z * gf) + sin(q.z * gf) * cos(q.x * gf);
+    float gd = (abs(G) - 0.85) / gf;
+    d = mix(d, max(d, gd), uGyroid);
+  }
+  if(uWorley > 0.001){
+    vec2 w = worley2(q * uWorlS);
+    d += uWorley * (w.y - w.x - 0.3) * 0.10;
+  }
+  if(uCSG > 0.5){
+    vec3 cc = vec3(0.0, uCSGY, 0.0);
+    float ds = length(p - cc) - uCSGSize;
+    if(uCSG < 1.5) d = min(d, ds);
+    else if(uCSG < 2.5) d = max(d, -ds);
+    else if(uCSG < 3.5) d = max(d, ds);
+    else d = max(d, uCSGY - p.y);
+  }
+  if(uShell > 0.001) d = abs(d) - uShell;
+  gTrap = trap; gLevel = level;
+  return d / max(uSquash, 1.0);
+}
+
+vec3 calcNormal(vec3 p){
+  float e = 0.0012;
+  vec2 k = vec2(1.0, -1.0);
+  return normalize(
+    k.xyy * de(p + k.xyy * e) +
+    k.yyx * de(p + k.yyx * e) +
+    k.yxy * de(p + k.yxy * e) +
+    k.xxx * de(p + k.xxx * e));
+}
+
+vec3 palette(float t){
+  if(uPal == 0) return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 1.0, 1.0) + vec3(0.0, 0.33, 0.67)));
+  if(uPal == 1) return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.7, 0.4) + vec3(0.0, 0.12, 0.25)));
+  if(uPal == 2) return 0.5 + 0.5 * cos(6.28318 * (t * vec3(0.6, 0.9, 1.0) + vec3(0.45, 0.35, 0.15)));
+  return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.5, 1.0) + vec3(0.6, 0.1, 0.75)));
+}
+
+void main(){
+  vec2 uv = (2.0 * gl_FragCoord.xy - uRes) / uRes.y;
+  vec3 ro = uCamPos;
+  vec3 rd = normalize(uCamFwd * 1.6 + uCamRight * uv.x + uCamUp * uv.y);
+  vec3 col = vec3(0.012, 0.016, 0.028);
+  float bg = 0.5 + 0.5 * rd.y;
+  col += vec3(0.010, 0.020, 0.030) * bg;
+
+  float t = 0.0;
+  float tmax = 14.0;
+  float d = 0.0;
+  int steps = 0;
+  for(int i=0; i<110; i++){
+    d = de(ro + rd * t);
+    steps = i;
+    if(d < 0.0007 * (1.0 + t) / uDetail) break;
+    t += d * uStep;
+    if(t > tmax) break;
+  }
+  gSteps = float(steps);
+
+  if(t < tmax){
+    vec3 pos = ro + rd * t;
+    vec3 nor = calcNormal(pos);
+    float trap = gTrap;
+    vec3 smoothCol = palette(trap * uSpread * 0.55 + uPhase);
+    vec3 bandCol = palette(gLevel / max(float(uIter), 1.0) * 0.85 + uPhase);
+    vec3 base = mix(smoothCol, bandCol, uBand);
+    float st = 0.5 + 0.5 * sin(pos.y * 16.0);
+    base *= mix(1.0, 0.45 + 0.9 * st, uStripe);
+    vec3 lig = normalize(vec3(cos(uLightAng), 0.75, sin(uLightAng)));
+    float dif = clamp(dot(nor, lig), 0.0, 1.0);
+    float sky = clamp(0.5 + 0.5 * nor.y, 0.0, 1.0);
+    float rim = pow(1.0 - clamp(dot(nor, -rd), 0.0, 1.0), 3.0);
+    float ao = clamp(1.0 - gSteps / 110.0, 0.35, 1.0);
+    col = base * (0.22 + 0.85 * dif + 0.25 * sky) * ao;
+    col += vec3(0.45, 0.95, 0.85) * rim * uGlowAmt * (0.35 + 0.65 * dif);
+    float thin = clamp(1.15 - trap * 0.85, 0.0, 1.0);
+    col += base * thin * uEdgeGlow * 1.8;
+    float fogF = smoothstep(4.5, 13.5, t) * uFog;
+    col = mix(col, vec3(0.012, 0.016, 0.028), fogF);
+  }
+  col = pow(col, vec3(0.85));
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const uniforms = {
+  uRes: { value: new THREE.Vector2(1, 1) },
+  uCamPos: { value: new THREE.Vector3() },
+  uCamRight: { value: new THREE.Vector3() },
+  uCamUp: { value: new THREE.Vector3() },
+  uCamFwd: { value: new THREE.Vector3() },
+  uType: { value: 0 },
+  uIter: { value: 10 },
+  uScale: { value: 2.0 },
+  uTwist: { value: 0.0 },
+  uSpread: { value: 1.2 },
+  uGlowAmt: { value: 0.4 },
+  uPhase: { value: 0.0 },
+  uPal: { value: 0 },
+  uTypeB: { value: 2 },
+  uLean: { value: 0.0 },
+  uBulge: { value: 0.0 },
+  uSquash: { value: 1.0 },
+  uTumble: { value: 0.0 },
+  uMorph: { value: 0.0 },
+  uEdgeGlow: { value: 0.0 },
+  uLightAng: { value: 0.7 },
+  uFog: { value: 0.55 },
+  uBand: { value: 0.0 },
+  uStripe: { value: 0.0 },
+  uDetail: { value: 1.0 },
+  uWave: { value: 0.0 }, uWaveF: { value: 3.0 }, uPulse: { value: 0.0 }, uPulseRate: { value: 1.2 },
+  uAnim: { value: 0.0 }, uFlute: { value: 0.0 }, uFluteF: { value: 14.0 },
+  uNoiseB: { value: 0.0 }, uNoiseS: { value: 1.6 }, uGyroid: { value: 0.0 }, uGyroS: { value: 4.0 },
+  uWorley: { value: 0.0 }, uWorlS: { value: 2.4 }, uShell: { value: 0.0 },
+  uRadial: { value: 1.0 }, uRepeat: { value: 0.0 }, uInvert: { value: 0.0 }, uSmorph: { value: 0.0 },
+  uCSG: { value: 0.0 }, uCSGSize: { value: 1.1 }, uCSGY: { value: 0.0 }, uJuliaW: { value: 0.0 },
+  uStep: { value: 0.9 }
+};
+const mat = new THREE.ShaderMaterial({ uniforms, fragmentShader: FRAG,
+  vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }' });
+const quadScene = new THREE.Scene();
+quadScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+const S = { theta: 0.7, phi: 1.05, dist: 3.6, target: new THREE.Vector3(0, 0.05, 0) };
+let quality = 1.0;
+let renderScale = 1.0;
+let autoRes = true;
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const eff = quality * renderScale;
+  renderer.setSize(Math.round(w * eff), Math.round(h * eff), false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  uniforms.uRes.value.set(Math.round(w * eff), Math.round(h * eff));
+  uniforms.uDetail.value = eff;
+}
+addEventListener('resize', resize);
+
+function updateCam() {
+  const sp = Math.sin(S.phi), cp = Math.cos(S.phi);
+  const pos = new THREE.Vector3(
+    S.target.x + S.dist * sp * Math.sin(S.theta),
+    S.target.y + S.dist * cp,
+    S.target.z + S.dist * sp * Math.cos(S.theta));
+  const fwd = S.target.clone().sub(pos).normalize();
+  const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+  const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+  uniforms.uCamPos.value.copy(pos);
+  uniforms.uCamFwd.value.copy(fwd);
+  uniforms.uCamRight.value.copy(right);
+  uniforms.uCamUp.value.copy(up);
+}
+
+let dragging = false, px = 0, py = 0, pinchD = 0;
+stage.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; stage.setPointerCapture(e.pointerId); });
+stage.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  S.theta -= (e.clientX - px) * 0.007;
+  S.phi = Math.max(0.12, Math.min(2.9, S.phi - (e.clientY - py) * 0.007));
+  px = e.clientX; py = e.clientY;
+});
+stage.addEventListener('pointerup', () => { dragging = false; });
+stage.addEventListener('wheel', e => {
+  e.preventDefault();
+  S.dist = Math.max(1.6, Math.min(9, S.dist * (1 + Math.sign(e.deltaY) * 0.08)));
+  document.getElementById('zoom').value = S.dist;
+  document.getElementById('v-zoom').textContent = S.dist.toFixed(2);
+}, { passive: false });
+stage.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const d = Math.hypot(dx, dy);
+    if (pinchD > 0) {
+      S.dist = Math.max(1.6, Math.min(9, S.dist * pinchD / d));
+      document.getElementById('zoom').value = S.dist;
+      document.getElementById('v-zoom').textContent = S.dist.toFixed(2);
+    }
+    pinchD = d;
+  }
+}, { passive: true });
+stage.addEventListener('touchend', () => { pinchD = 0; });
+
+const $ = id => document.getElementById(id);
+function bindVal(id, vid, fn, fmt) {
+  const el = $(id), lab = $(vid);
+  const upd = () => { const v = parseFloat(el.value); lab.textContent = fmt ? fmt(v) : v; fn(v); };
+  el.addEventListener('input', upd); upd();
+  return upd;
+}
+$('ftype').addEventListener('change', e => { uniforms.uType.value = parseInt(e.target.value); });
+$('pal').addEventListener('change', e => { uniforms.uPal.value = parseInt(e.target.value); });
+bindVal('iter', 'v-iter', v => { uniforms.uIter.value = Math.round(v); });
+bindVal('fscale', 'v-scale', v => { uniforms.uScale.value = v; }, v => v.toFixed(2));
+bindVal('twist', 'v-twist', v => { uniforms.uTwist.value = v * Math.PI / 180; }, v => v + '°');
+bindVal('spread', 'v-spread', v => { uniforms.uSpread.value = v; }, v => v.toFixed(2));
+bindVal('glow', 'v-glow', v => { uniforms.uGlowAmt.value = v / 100; }, v => v + '%');
+bindVal('zoom', 'v-zoom', v => { S.dist = v; }, v => v.toFixed(2));
+bindVal('lean', 'v-lean', v => { uniforms.uLean.value = v / 100; }, v => v + '%');
+bindVal('bulge', 'v-bulge', v => { uniforms.uBulge.value = v / 100; }, v => v + '%');
+bindVal('squash', 'v-squash', v => { uniforms.uSquash.value = v / 100; }, v => (v / 100).toFixed(2));
+bindVal('tumble', 'v-tumble', v => { uniforms.uTumble.value = v * Math.PI / 180; }, v => v + '°');
+bindVal('morph', 'v-morph', v => { uniforms.uMorph.value = v / 100; }, v => v + '%');
+bindVal('lang2', 'v-lang2', v => { uniforms.uLightAng.value = v * Math.PI / 180; }, v => v + '°');
+bindVal('fog', 'v-fog', v => { uniforms.uFog.value = v / 100; }, v => v + '%');
+bindVal('eglow', 'v-eglow', v => { uniforms.uEdgeGlow.value = v / 100; }, v => v + '%');
+bindVal('band', 'v-band', v => { uniforms.uBand.value = v / 100; }, v => v + '%');
+bindVal('stripe', 'v-stripe', v => { uniforms.uStripe.value = v / 100; }, v => v + '%');
+$('mtype').addEventListener('change', e => { uniforms.uTypeB.value = parseInt(e.target.value); });
+$('csgsel').addEventListener('change', e => { uniforms.uCSG.value = parseFloat(e.target.value); });
+bindVal('wave', 'v-wave', v => { uniforms.uWave.value = v / 100; }, v => v + '%');
+bindVal('wavef', 'v-wavef', v => { uniforms.uWaveF.value = v; }, v => v.toFixed(1));
+bindVal('pulse', 'v-pulse', v => { uniforms.uPulse.value = v / 100; }, v => v + '%');
+bindVal('pulserate', 'v-pulserate', v => { uniforms.uPulseRate.value = v; }, v => v.toFixed(1));
+bindVal('flute', 'v-flute', v => { uniforms.uFlute.value = v / 100; }, v => v + '%');
+bindVal('flutef', 'v-flutef', v => { uniforms.uFluteF.value = v; }, v => v);
+bindVal('smorph', 'v-smorph', v => { uniforms.uSmorph.value = v / 100; }, v => v + '%');
+bindVal('radial', 'v-radial', v => { uniforms.uRadial.value = v; }, v => v <= 1 ? 'off' : v + ' sectors');
+bindVal('noiseb', 'v-noiseb', v => { uniforms.uNoiseB.value = v / 100; }, v => v + '%');
+bindVal('noises', 'v-noises', v => { uniforms.uNoiseS.value = v; }, v => v.toFixed(1));
+bindVal('gyroid', 'v-gyroid', v => { uniforms.uGyroid.value = v / 100; }, v => v + '%');
+bindVal('gyros', 'v-gyros', v => { uniforms.uGyroS.value = v; }, v => v.toFixed(2));
+bindVal('worley', 'v-worley', v => { uniforms.uWorley.value = v / 100; }, v => v + '%');
+bindVal('wors', 'v-wors', v => { uniforms.uWorlS.value = v; }, v => v.toFixed(1));
+bindVal('shell', 'v-shell', v => { uniforms.uShell.value = v / 100; }, v => v + '%');
+bindVal('invert', 'v-invert', v => { uniforms.uInvert.value = v / 100; }, v => v + '%');
+bindVal('csgsize', 'v-csgsize', v => { uniforms.uCSGSize.value = v; }, v => v.toFixed(2));
+bindVal('csgh', 'v-csgh', v => { uniforms.uCSGY.value = v; }, v => v.toFixed(2));
+bindVal('repeat', 'v-repeat', v => { uniforms.uRepeat.value = v; }, v => v === 0 ? 'off' : v.toFixed(2));
+bindVal('juliaw', 'v-juliaw', v => { uniforms.uJuliaW.value = v / 100; }, v => v + '%');
+$('resmode').addEventListener('change', e => {
+  if (e.target.value === 'auto') { autoRes = true; renderScale = 1.0; quality = 1.0; }
+  else { autoRes = false; renderScale = parseFloat(e.target.value); quality = 1.0; }
+  resize();
+});
+bindVal('exd', 'v-exd', () => {});
+
+// ---------- export: the same fractal math, carved into a real mesh ----------
+function jsHash(x, y, z) {
+  let n = (Math.imul(x | 0, 374761393) + Math.imul(y | 0, 668265263) + Math.imul(z | 0, 1440662683)) | 0;
+  n = Math.imul(n ^ (n >>> 13), 1103515245);
+  return ((n ^ (n >>> 16)) >>> 0) / 4294967296;
+}
+function jsVNoise(x, y, z) {
+  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+  let fx = x - ix, fy = y - iy, fz = z - iz;
+  fx = fx * fx * (3 - 2 * fx); fy = fy * fy * (3 - 2 * fy); fz = fz * fz * (3 - 2 * fz);
+  const L = (a, b, t) => a + (b - a) * t;
+  return L(
+    L(L(jsHash(ix, iy, iz), jsHash(ix + 1, iy, iz), fx), L(jsHash(ix, iy + 1, iz), jsHash(ix + 1, iy + 1, iz), fx), fy),
+    L(L(jsHash(ix, iy, iz + 1), jsHash(ix + 1, iy, iz + 1), fx), L(jsHash(ix, iy + 1, iz + 1), jsHash(ix + 1, iy + 1, iz + 1), fx), fy),
+    fz);
+}
+function jsFbm(x, y, z) {
+  let s = 0, a = 0.5;
+  for (let i = 0; i < 4; i++) { s += a * jsVNoise(x, y, z); x *= 2.03; y *= 2.03; z *= 2.03; a *= 0.5; }
+  return s;
+}
+function jsWorley(x, y, z) {
+  const ix = Math.floor(x), iy = Math.floor(y), iz = Math.floor(z);
+  let f1 = 8, f2 = 8;
+  for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (let k = -1; k <= 1; k++) {
+    const cx = ix + i, cy = iy + j, cz = iz + k;
+    const px = cx + jsHash(cx, cy, cz), py = cy + jsHash(cx + 57, cy, cz), pz = cz + jsHash(cx, cy + 131, cz);
+    const d = Math.hypot(px - x, py - y, pz - z);
+    if (d < f1) { f2 = f1; f1 = d; } else if (d < f2) { f2 = d; }
+  }
+  return [f1, f2];
+}
+function jsQmul(a, b) {
+  return [
+    a[0] * b[0] - (a[1] * b[1] + a[2] * b[2] + a[3] * b[3]),
+    a[0] * b[1] + b[0] * a[1] + (a[2] * b[3] - a[3] * b[2]),
+    a[0] * b[2] + b[0] * a[2] + (a[3] * b[1] - a[1] * b[3]),
+    a[0] * b[3] + b[0] * a[3] + (a[1] * b[2] - a[2] * b[1])
+  ];
+}
+function jsBulb(px, py, pz, P) {
+  let x = px, y = py, z = pz, dr = 1, r = 0;
+  const power = 6 + P.scale * 1.5;
+  for (let i = 0; i < 16; i++) {
+    r = Math.hypot(x, y, z);
+    if (r > 2) break;
+    const th = Math.acos(Math.max(-1, Math.min(1, z / Math.max(r, 1e-6))));
+    const ph = Math.atan2(y, x);
+    dr = Math.pow(r, power - 1) * power * dr + 1;
+    const zr = Math.pow(r, power);
+    const nth = th * power, nph = ph * power;
+    x = zr * Math.sin(nth) * Math.cos(nph) + px;
+    y = zr * Math.sin(nph) * Math.sin(nth) + py;
+    z = zr * Math.cos(nth) + pz;
+  }
+  return 0.5 * Math.log(Math.max(r, 1e-4)) * r / Math.max(dr, 1e-4);
+}
+function jsJulia(px, py, pz, P) {
+  let z = [px, py, pz, P.juliaw], dz = [1, 0, 0, 0];
+  const c = [-0.18, 0.62, 0.12, 0.05];
+  let r = Math.hypot(z[0], z[1], z[2], z[3]);
+  for (let i = 0; i < 14; i++) {
+    dz = jsQmul(z, dz).map(v => v * 2);
+    z = jsQmul(z, z).map((v, j) => v + c[j]);
+    r = Math.hypot(z[0], z[1], z[2], z[3]);
+    if (r > 4) break;
+  }
+  const dl = Math.hypot(dz[0], dz[1], dz[2], dz[3]);
+  return 0.5 * Math.log(Math.max(r, 1e-4)) * r / Math.max(dl, 1e-4);
+}
+function jsTyped(px, py, pz, type, P) {
+  let x = px, y = py, z = pz;
+  const ox = 1 + P.lean, oy = 1 + P.lean * 0.35, oz = 1 - P.lean * 0.65;
+  const cy = Math.cos(P.twist), sy = Math.sin(P.twist);
+  const cx = Math.cos(P.tumble), sx = Math.sin(P.tumble);
+  const cz = Math.cos(P.tumble * 0.7), sz = Math.sin(P.tumble * 0.7);
+  let invDr = 1;
+  const PHI = 1.618034;
+  const n1 = [1, PHI, 0], n2 = [0, 1, PHI], n3 = [PHI, 0, 1];
+  const norm = v => { const l = Math.hypot(v[0], v[1], v[2]); return [v[0] / l, v[1] / l, v[2] / l]; };
+  const N1 = norm(n1), N2 = norm(n2), N3 = norm(n3);
+  for (let n = 0; n < P.iter; n++) {
+    if (type === 0) {
+      if (x + y < 0) { const t = x; x = -y; y = -t; }
+      if (x + z < 0) { const t = x; x = -z; z = -t; }
+      if (y + z < 0) { const t = y; y = -z; z = -t; }
+    } else if (type === 1) {
+      x = Math.abs(x); y = Math.abs(y); z = Math.abs(z);
+      if (x < y) { const t = x; x = y; y = t; }
+      if (x < z) { const t = x; x = z; z = t; }
+      if (y < z) { const t = y; y = z; z = t; }
+    } else if (type === 3) {
+      x = Math.abs(x); y = Math.abs(y); z = Math.abs(z);
+      for (const N of [N1, N2, N3]) {
+        const d = x * N[0] + y * N[1] + z * N[2];
+        if (d < 0) { x -= 2 * d * N[0]; y -= 2 * d * N[1]; z -= 2 * d * N[2]; }
+      }
+      x = Math.abs(x); y = Math.abs(y); z = Math.abs(z);
+    } else {
+      x = Math.abs(x); y = Math.abs(y); z = Math.abs(z);
+      if (x < y) { const t = x; x = y; y = t; }
+      if (y < z) { const t = y; y = z; z = t; }
+    }
+    if (P.twist !== 0 || P.tumble !== 0) {
+      let nx = cy * x + sy * z, nz = -sy * x + cy * z; x = nx; z = nz;
+      let ny = cx * y - sx * z; nz = sx * y + cx * z; y = ny; z = nz;
+      nx = cz * x - sz * y; ny = sz * x + cz * y; x = nx; y = ny;
+    }
+    const pul = P.pulse * Math.sin(n * P.pulserate + P.anim * 0.7);
+    if (P.pulse > 0.001) {
+      const cp = Math.cos(pul * 0.6), sp = Math.sin(pul * 0.6);
+      const nx = cp * x + sp * z, nz = -sp * x + cp * z; x = nx; z = nz;
+    }
+    if (P.wave > 0.001) {
+      const wA = P.wave * 0.06;
+      const ax = Math.sin(y * P.wavef + P.anim + n * 1.7);
+      const ay = Math.sin(z * P.wavef * 1.13 + P.anim);
+      const az = Math.sin(x * P.wavef * 0.91 + P.anim);
+      x += wA * ax; y += wA * ay; z += wA * az;
+    }
+    const effScale = P.scale * (1 + 0.28 * pul);
+    const offF = 1 + 0.3 * P.pulse * Math.sin(n * P.pulserate + 2.1 + P.anim * 0.7);
+    x = x * effScale - ox * offF * (effScale - 1);
+    y = y * effScale - oy * offF * (effScale - 1);
+    z = z * effScale - oz * offF * (effScale - 1);
+    invDr /= effScale;
+  }
+  return (Math.hypot(x, y, z) - 0.35 - P.bulge) * invDr;
+}
+function jsAny(x, y, z, type, P) {
+  if (type === 4) return jsBulb(x, y, z, P);
+  if (type === 5) return jsJulia(x, y, z, P);
+  return jsTyped(x, y, z, type, P);
+}
+function jsDE(x, y, z, P) {
+  let qx = x, qy = y * P.squash, qz = z;
+  if (P.radial > 1.5) {
+    let ang = Math.atan2(qz, qx);
+    const sec = Math.PI * 2 / P.radial;
+    ang = ((ang % sec) + sec) % sec - sec / 2;
+    const rr = Math.hypot(qx, qz);
+    qx = Math.cos(ang) * rr; qz = Math.sin(ang) * rr;
+  }
+  if (P.invert > 0.001) {
+    const d2 = Math.max(qx * qx + qy * qy + qz * qz, 0.05);
+    const k = 2.56 / d2;
+    qx = qx + (qx * k - qx) * P.invert;
+    qy = qy + (qy * k - qy) * P.invert;
+    qz = qz + (qz * k - qz) * P.invert;
+  }
+  if (P.repeat > 0.01) {
+    const s = P.repeat;
+    qx = ((qx + s / 2) % s + s) % s - s / 2;
+    qy = ((qy + s / 2) % s + s) % s - s / 2;
+    qz = ((qz + s / 2) % s + s) % s - s / 2;
+  }
+  if (P.noiseb > 0.001) {
+    const ns = P.noises;
+    qx += (jsFbm(qx * ns + 11.1, qy * ns, qz * ns) - 0.47) * P.noiseb * 1.5;
+    qy += (jsFbm(qx * ns, qy * ns + 27.7, qz * ns) - 0.47) * P.noiseb * 1.5;
+    qz += (jsFbm(qx * ns, qy * ns, qz * ns + 43.3) - 0.47) * P.noiseb * 1.5;
+  }
+  if (P.wave > 0.001) {
+    qx += P.wave * 0.22 * Math.sin(qy * P.wavef + P.anim);
+    qy += P.wave * 0.22 * Math.sin(qz * P.wavef * 1.13 + P.anim * 1.3);
+    qz += P.wave * 0.22 * Math.sin(qx * P.wavef * 0.91 + P.anim * 0.7);
+  }
+  let d = jsAny(qx, qy, qz, P.type, P);
+  let m = P.morph;
+  if (P.smorph > 0.001) m = Math.max(0, Math.min(1, m + P.smorph * Math.sin((x * 0.7 + y + z * 0.45) * 2.6 + P.anim)));
+  if (m > 0.001) {
+    const dB = jsAny(qx, qy, qz, P.typeB, P);
+    d = d * (1 - m) + dB * m;
+  }
+  if (P.flute > 0.001) d -= P.flute * 0.055 * Math.sin(y * P.flutef + Math.hypot(x, z) * P.flutef * 0.35 + P.anim);
+  if (P.gyroid > 0.001) {
+    const gf = P.gyros * 1.35;
+    const G = Math.sin(qx * gf) * Math.cos(qy * gf) + Math.sin(qy * gf) * Math.cos(qz * gf) + Math.sin(qz * gf) * Math.cos(qx * gf);
+    const gd = (Math.abs(G) - 0.85) / gf;
+    d = d * (1 - P.gyroid) + Math.max(d, gd) * P.gyroid;
+  }
+  if (P.worley > 0.001) {
+    const w = jsWorley(qx * P.wors, qy * P.wors, qz * P.wors);
+    d += P.worley * (w[1] - w[0] - 0.3) * 0.10;
+  }
+  if (P.csg > 0.5) {
+    const ds = Math.hypot(x, y - P.csgh, z) - P.csgsize;
+    if (P.csg < 1.5) d = Math.min(d, ds);
+    else if (P.csg < 2.5) d = Math.max(d, -ds);
+    else if (P.csg < 3.5) d = Math.max(d, ds);
+    else d = Math.max(d, P.csgh - y);
+  }
+  if (P.shell > 0.001) d = Math.abs(d) - P.shell;
+  return d / Math.max(P.squash, 1.0);
+}
+
+function buildExportParams() {
+  return {
+    type: parseInt($('ftype').value), typeB: parseInt($('mtype').value),
+    iter: Math.round(parseFloat($('iter').value)),
+    scale: parseFloat($('fscale').value),
+    twist: parseFloat($('twist').value) * Math.PI / 180,
+    tumble: parseFloat($('tumble').value) * Math.PI / 180,
+    lean: parseFloat($('lean').value) / 100,
+    bulge: parseFloat($('bulge').value) / 100,
+    squash: parseFloat($('squash').value) / 100,
+    morph: parseFloat($('morph').value) / 100,
+    wave: parseFloat($('wave').value) / 100, wavef: parseFloat($('wavef').value),
+    pulse: parseFloat($('pulse').value) / 100, pulserate: parseFloat($('pulserate').value),
+    flute: parseFloat($('flute').value) / 100, flutef: parseFloat($('flutef').value),
+    smorph: parseFloat($('smorph').value) / 100, radial: parseFloat($('radial').value),
+    noiseb: parseFloat($('noiseb').value) / 100, noises: parseFloat($('noises').value),
+    gyroid: parseFloat($('gyroid').value) / 100, gyros: parseFloat($('gyros').value),
+    worley: parseFloat($('worley').value) / 100, wors: parseFloat($('wors').value),
+    shell: parseFloat($('shell').value) / 100, invert: parseFloat($('invert').value) / 100,
+    csg: parseFloat($('csgsel').value), csgsize: parseFloat($('csgsize').value), csgh: parseFloat($('csgh').value),
+    repeat: parseFloat($('repeat').value), juliaw: parseFloat($('juliaw').value) / 100,
+    anim: uniforms.uAnim.value
+  };
+}
+
+async function carveMesh(P, N, info) {
+  const B = 2.2, step = 2 * B / N, W = N + 1;
+  // coarse field first: fine points far from the surface inherit its sign, so the
+  // expensive fractal math only runs in a safety band around the skin.
+  const C = 40, CW = C + 1, cStep = 2 * B / C;
+  const cfield = new Float32Array(CW * CW * CW);
+  const cAt = (i, j, k) => cfield[i + CW * (j + CW * k)];
+  for (let k = 0; k < CW; k++) for (let j = 0; j < CW; j++) for (let i = 0; i < CW; i++)
+    cfield[i + CW * (j + CW * k)] = jsDE(-B + i * cStep, -B + j * cStep, -B + k * cStep, P);
+  const thr = 2.2 * cStep;
+  function fineVal(x, y, z) {
+    const gx = Math.min(C - 1, Math.max(0, Math.floor((x + B) / (2 * B) * C)));
+    const gy = Math.min(C - 1, Math.max(0, Math.floor((y + B) / (2 * B) * C)));
+    const gz = Math.min(C - 1, Math.max(0, Math.floor((z + B) / (2 * B) * C)));
+    let mn = Infinity, mx = -Infinity;
+    for (let dk = 0; dk <= 1; dk++) for (let dj = 0; dj <= 1; dj++) for (let di = 0; di <= 1; di++) {
+      const v = cAt(gx + di, gy + dj, gz + dk);
+      if (v < mn) mn = v;
+      if (v > mx) mx = v;
+    }
+    if (mn > thr) return 10;
+    if (mx < -thr) return -10;
+    return jsDE(x, y, z, P);
+  }
+  function fieldLayer(k) {
+    const f = new Float32Array(W * W);
+    const z = -B + k * step;
+    for (let j = 0; j < W; j++) for (let i = 0; i < W; i++)
+      f[i + W * j] = fineVal(-B + i * step, -B + j * step, z);
+    return f;
+  }
+  const verts = [];
+  const tris = [];
+  const corners = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,0,1],[0,1,1],[1,1,1]];
+  const edges = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  let prevCell = null;
+  let fK = fieldLayer(0);
+  const cellAt = (arr, i, j) => (i < 0 || j < 0 || i >= N || j >= N || !arr) ? -1 : arr[i + N * j];
+  function quad(a, b, c, d, flip) {
+    if (a < 0 || b < 0 || c < 0 || d < 0) return;
+    if (flip) tris.push(a, b, c, b, d, c); else tris.push(a, c, b, b, c, d);
+  }
+  for (let k = 0; k < N; k++) {
+    const fK1 = fieldLayer(k + 1);
+    const curCell = new Int32Array(N * N).fill(-1);
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const cv = corners.map(c => (c[2] === 0 ? fK : fK1)[(i + c[0]) + W * (j + c[1])]);
+      let mask = 0;
+      cv.forEach((v, n) => { if (v < 0) mask |= (1 << n); });
+      if (mask === 0 || mask === 255) continue;
+      let ax = 0, ay = 0, az = 0, cnt = 0;
+      for (const [a, b] of edges) {
+        const va = cv[a], vb = cv[b];
+        if ((va < 0) === (vb < 0)) continue;
+        const t = va / (va - vb);
+        const pa = corners[a], pb = corners[b];
+        ax += -B + (i + pa[0] + (pb[0] - pa[0]) * t) * step;
+        ay += -B + (j + pa[1] + (pb[1] - pa[1]) * t) * step;
+        az += -B + (k + pa[2] + (pb[2] - pa[2]) * t) * step;
+        cnt++;
+      }
+      curCell[i + N * j] = verts.length / 3;
+      verts.push(ax / cnt, ay / cnt, az / cnt);
+    }
+    for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) {
+      const s = fK[i + W * j] < 0;
+      if (i < N && ((fK[(i + 1) + W * j] < 0) !== s))
+        quad(cellAt(prevCell, i, j - 1), cellAt(prevCell, i, j), cellAt(curCell, i, j - 1), cellAt(curCell, i, j), s);
+      if (j < N && ((fK[i + W * (j + 1)] < 0) !== s))
+        quad(cellAt(prevCell, i - 1, j), cellAt(curCell, i - 1, j), cellAt(prevCell, i, j), cellAt(curCell, i, j), !s);
+      if ((fK1[i + W * j] < 0) !== s)
+        quad(cellAt(curCell, i - 1, j - 1), cellAt(curCell, i, j - 1), cellAt(curCell, i - 1, j), cellAt(curCell, i, j), s);
+    }
+    prevCell = curCell;
+    fK = fK1;
+    if (k % 3 === 0) {
+      info.textContent = 'Carving the high resolution mesh: ' + Math.round(k / N * 100) + '%';
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+  return { verts, tris };
+}
+
+function smoothMesh(pos, tris, rounds) {
+  const nv = pos.length / 3;
+  // adjacency via triangle edges
+  const deg = new Uint32Array(nv);
+  for (let t = 0; t < tris.length; t += 3) {
+    deg[tris[t]] += 2; deg[tris[t + 1]] += 2; deg[tris[t + 2]] += 2;
+  }
+  const offs = new Uint32Array(nv + 1);
+  for (let i = 0; i < nv; i++) offs[i + 1] = offs[i] + deg[i];
+  const nbr = new Int32Array(offs[nv]);
+  const fill = offs.slice(0, nv);
+  function addEdge(a, b) { nbr[fill[a]++] = b; }
+  for (let t = 0; t < tris.length; t += 3) {
+    const a = tris[t], b = tris[t + 1], c = tris[t + 2];
+    addEdge(a, b); addEdge(b, a); addEdge(b, c); addEdge(c, b); addEdge(c, a); addEdge(a, c);
+  }
+  const tmp = new Float32Array(pos.length);
+  for (let r = 0; r < rounds; r++) {
+    for (const lambda of [0.5, -0.53]) {
+      tmp.set(pos);
+      for (let v = 0; v < nv; v++) {
+        const s = offs[v], e = offs[v + 1], m = e - s;
+        if (!m) continue;
+        let ax = 0, ay = 0, az = 0;
+        for (let n = s; n < e; n++) { const w = nbr[n] * 3; ax += tmp[w]; ay += tmp[w + 1]; az += tmp[w + 2]; }
+        const vi = v * 3;
+        pos[vi] = tmp[vi] + lambda * (ax / m - tmp[vi]);
+        pos[vi + 1] = tmp[vi + 1] + lambda * (ay / m - tmp[vi + 1]);
+        pos[vi + 2] = tmp[vi + 2] + lambda * (az / m - tmp[vi + 2]);
+      }
+    }
+  }
+}
+
+function vertexNormals(pos, tris) {
+  const nor = new Float32Array(pos.length);
+  for (let t = 0; t < tris.length; t += 3) {
+    const a = tris[t] * 3, b = tris[t + 1] * 3, c = tris[t + 2] * 3;
+    const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+    const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    for (const idx of [a, b, c]) { nor[idx] += nx; nor[idx + 1] += ny; nor[idx + 2] += nz; }
+  }
+  for (let i = 0; i < nor.length; i += 3) {
+    const l = Math.hypot(nor[i], nor[i + 1], nor[i + 2]) || 1;
+    nor[i] /= l; nor[i + 1] /= l; nor[i + 2] /= l;
+  }
+  return nor;
+}
+
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+async function carveAndExport(kind) {
+  const info = $('info');
+  const btns = [$('exportstl'), $('exportglb')];
+  btns.forEach(b => { b.disabled = true; });
+  try {
+    const P = buildExportParams();
+    const N = Math.round(parseFloat($('exd').value));
+    info.textContent = 'Preparing the carve at resolution ' + N;
+    await new Promise(r => setTimeout(r, 0));
+    const { verts, tris } = await carveMesh(P, N, info);
+    const nTri = tris.length / 3;
+    if (!nTri) { info.textContent = 'Nothing to export: no surface in range. Pull back the erosion or bulge.'; return; }
+    const pos = new Float32Array(verts);
+    if ($('smooth').checked) {
+      info.textContent = 'Smoothing the surface for sculpting';
+      await new Promise(r => setTimeout(r, 0));
+      smoothMesh(pos, tris, 2);
+    }
+    if (kind === 'stl') {
+      info.textContent = 'Writing the STL file';
+      await new Promise(r => setTimeout(r, 0));
+      const buf = new ArrayBuffer(84 + nTri * 50);
+      const dv = new DataView(buf);
+      dv.setUint32(80, nTri, true);
+      let o = 84;
+      for (let t = 0; t < tris.length; t += 3) {
+        const a = tris[t] * 3, b = tris[t + 1] * 3, c = tris[t + 2] * 3;
+        const ux = pos[b] - pos[a], uy = pos[b + 1] - pos[a + 1], uz = pos[b + 2] - pos[a + 2];
+        const vx = pos[c] - pos[a], vy = pos[c + 1] - pos[a + 1], vz = pos[c + 2] - pos[a + 2];
+        let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+        const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+        dv.setFloat32(o, nx, true); dv.setFloat32(o + 4, ny, true); dv.setFloat32(o + 8, nz, true);
+        for (const vi of [a, b, c]) {
+          dv.setFloat32(o + 12, pos[vi], true);
+          dv.setFloat32(o + 16, pos[vi + 1], true);
+          dv.setFloat32(o + 20, pos[vi + 2], true);
+          o += 12;
+        }
+        o += 14;
+      }
+      downloadBlob(new Blob([buf], { type: 'model/stl' }), 'fractal-explorer.stl');
+      info.textContent = 'Exported ' + nTri.toLocaleString() + ' triangles, about ' + (buf.byteLength / 1048576).toFixed(1) + ' MB. Scale it in your slicer.';
+    } else {
+      info.textContent = 'Packing the GLB for Nomad';
+      await new Promise(r => setTimeout(r, 0));
+      const nor = vertexNormals(pos, tris);
+      const idx = new Uint32Array(tris);
+      const binLen = pos.byteLength + nor.byteLength + idx.byteLength;
+      const bin = new ArrayBuffer(binLen);
+      new Float32Array(bin, 0, pos.length).set(pos);
+      new Float32Array(bin, pos.byteLength, nor.length).set(nor);
+      new Uint32Array(bin, pos.byteLength + nor.byteLength, idx.length).set(idx);
+      let mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+      for (let i = 0; i < pos.length; i += 3) for (let a = 0; a < 3; a++) {
+        if (pos[i + a] < mn[a]) mn[a] = pos[i + a];
+        if (pos[i + a] > mx[a]) mx[a] = pos[i + a];
+      }
+      const json = {
+        asset: { version: '2.0', generator: 'Fractal Explorer' },
+        scene: 0, scenes: [{ nodes: [0] }],
+        nodes: [{ mesh: 0, name: 'Fractal' }],
+        meshes: [{ name: 'Fractal', primitives: [{ attributes: { POSITION: 0, NORMAL: 1 }, indices: 2, material: 0 }] }],
+        materials: [{ name: 'Sculpt clay', pbrMetallicRoughness: { baseColorFactor: [0.78, 0.8, 0.83, 1], metallicFactor: 0.0, roughnessFactor: 0.85 }, doubleSided: true }],
+        buffers: [{ byteLength: binLen }],
+        bufferViews: [
+          { buffer: 0, byteOffset: 0, byteLength: pos.byteLength },
+          { buffer: 0, byteOffset: pos.byteLength, byteLength: nor.byteLength },
+          { buffer: 0, byteOffset: pos.byteLength + nor.byteLength, byteLength: idx.byteLength }
+        ],
+        accessors: [
+          { bufferView: 0, componentType: 5126, count: pos.length / 3, type: 'VEC3', min: mn, max: mx },
+          { bufferView: 1, componentType: 5126, count: nor.length / 3, type: 'VEC3' },
+          { bufferView: 2, componentType: 5125, count: idx.length, type: 'SCALAR' }
+        ]
+      };
+      let jsonStr = JSON.stringify(json);
+      while (jsonStr.length % 4) jsonStr += ' ';
+      const totalLen = 12 + 8 + jsonStr.length + 8 + binLen;
+      const out = new ArrayBuffer(totalLen);
+      const odv = new DataView(out);
+      odv.setUint32(0, 0x46546C67, true); odv.setUint32(4, 2, true); odv.setUint32(8, totalLen, true);
+      odv.setUint32(12, jsonStr.length, true); odv.setUint32(16, 0x4E4F534A, true);
+      new Uint8Array(out, 20, jsonStr.length).set(new TextEncoder().encode(jsonStr));
+      odv.setUint32(20 + jsonStr.length, binLen, true); odv.setUint32(24 + jsonStr.length, 0x004E4942, true);
+      new Uint8Array(out, 28 + jsonStr.length, binLen).set(new Uint8Array(bin));
+      downloadBlob(new Blob([out], { type: 'model/gltf-binary' }), 'fractal-explorer.glb');
+      info.textContent = 'Exported ' + nTri.toLocaleString() + ' triangles, about ' + (out.byteLength / 1048576).toFixed(1) + ' MB. Ready for Nomad Sculpt.';
+    }
+  } finally {
+    btns.forEach(b => { b.disabled = false; });
+  }
+}
+$('exportstl').addEventListener('click', () => carveAndExport('stl'));
+$('exportglb').addEventListener('click', () => carveAndExport('glb'));
+$('resetview').addEventListener('click', () => {
+  S.theta = 0.7; S.phi = 1.05; S.dist = 3.6;
+  $('zoom').value = 3.6; $('v-zoom').textContent = '3.60';
+});
+$('spin').addEventListener('change', () => {});
+$('flow').addEventListener('change', () => {});
+
+let last = performance.now(), phase = 0, animT = 0, fpsT = 0, frames = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if ($('spin').checked && !dragging) S.theta += dt * 0.25;
+  if ($('flow').checked) phase = (phase + dt * 0.08) % 1;
+  uniforms.uPhase.value = phase;
+  if ($('animform').checked) animT += dt;
+  uniforms.uAnim.value = animT;
+  uniforms.uStep.value = (uniforms.uWave.value > 0.02 || uniforms.uNoiseB.value > 0.02 ||
+    uniforms.uInvert.value > 0.02 || uniforms.uRepeat.value > 0.01 || uniforms.uGyroid.value > 0.02) ? 0.55 : 0.9;
+  updateCam();
+  renderer.render(quadScene, quadCam);
+  frames++; fpsT += dt;
+  if (fpsT > 2.5) {
+    const fps = frames / fpsT;
+    frames = 0; fpsT = 0;
+    if (autoRes) {
+      if (fps < 42 && quality > 0.45) { quality = Math.max(0.45, quality - 0.15); resize(); }
+      else if (fps > 57 && quality < 1.0) { quality = Math.min(1.0, quality + 0.1); resize(); }
+    }
+  }
+}
+resize();
+updateCam();
+requestAnimationFrame(loop);
+</script>
+<p style="font-size:12px; margin-top:18px; text-align:center;"><a href="https://tallangroberg.com/art-tools.html" style="color:#6d8093; text-decoration:none;">&larr; back to the workshop</a></p>
+<p style="font-size:12px; margin-top:6px; text-align:center;"><a href="https://tallangroberg.com/fractal-explorer.html" style="color:#6d8093; text-decoration:none;">Fractal Explorer Basic, the simple instrument &rarr;</a></p>
+</body>
+</html>
