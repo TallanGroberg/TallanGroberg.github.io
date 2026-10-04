@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>The Workshop: Tallan Groberg Art</title>
+<meta name="description" content="A hidden room of art tools. Fractal instruments for images, objects, and whole worlds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Space+Grotesk:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060609;
+  --bg-soft: #0c0c12;
+  --ink: #eceaf2;
+  --ink-dim: #a7a3b8;
+  --accent: #7fd4c1;
+  --accent-dim: #3e5e5f;
+  --line: rgba(255, 255, 255, 0.09);
+  --card: #101018;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Space Grotesk", sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; width: 100%; }
+nav { border-bottom: 1px solid var(--line); padding: 18px 0; }
+.brand { font-family: "Cormorant Garamond", serif; font-size: 1.4rem; color: var(--ink); text-decoration: none; }
+.brand em { color: var(--accent); font-style: italic; }
+main { flex: 1; padding: 56px 0 72px; }
+.kicker {
+  font-size: 0.8rem; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 14px;
+}
+h1 {
+  font-family: "Cormorant Garamond", serif; font-weight: 500;
+  font-size: clamp(2.2rem, 6vw, 3.6rem); line-height: 1.1; margin-bottom: 16px;
+}
+.lede { color: var(--ink-dim); font-size: 1.05rem; line-height: 1.7; max-width: 640px; margin-bottom: 40px; }
+.lede strong { color: var(--ink); }
+.tools { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px; }
+.tool {
+  display: block; text-decoration: none; color: var(--ink);
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 28px 24px; transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.tool:hover { transform: translateY(-3px); border-color: var(--accent-dim); }
+.tool h2 { font-family: "Cormorant Garamond", serif; font-weight: 500; font-size: 1.7rem; margin-bottom: 10px; }
+.tool p { color: var(--ink-dim); line-height: 1.6; font-size: 0.95rem; margin-bottom: 18px; }
+.tool .go { color: var(--accent); font-size: 0.9rem; letter-spacing: 0.08em; }
+footer { border-top: 1px solid var(--line); padding: 24px 0; }
+footer a { color: var(--accent); text-decoration: none; }
+footer .foot-inner { display: flex; justify-content: space-between; color: var(--ink-dim); font-size: 0.9rem; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a class="brand" href="index.html">Tallan Groberg <em>Art</em></a>
+  </div>
+</nav>
+
+<main>
+  <div class="wrap">
+    <div class="kicker">404 annex</div>
+    <h1>You found the workshop.</h1>
+    <p class="lede">This room is not on any chart of the site. These are the <strong>instruments</strong>: fractal tools for bending images, growing objects, and walking inside pure mathematics. They are toys, but they are honest ones, and everything they make is yours.</p>
+
+    <div class="tools">
+      <a class="tool" href="fractal-explorer.html">
+        <h2>Fractal Explorer</h2>
+        <p>Living 3D fractals, raymarched in your browser. Twist, lean, erode, and morph a Sierpinski pyramid, then export an STL and print it.</p>
+        <span class="go">Enter &rarr;</span>
+      </a>
+      <a class="tool" href="fractal-forge.html">
+        <h2>Fractal Forge</h2>
+        <p>Sculpt 3D objects with fractal math. Grow ant nests, trees, and coral colonies, paint with a picture, then export GLB or STL.</p>
+        <span class="go">Enter &rarr;</span>
+      </a>
+      <a class="tool" href="fractal-edges.html">
+        <h2>Fractal Edges</h2>
+        <p>Warp the edges of an image with fractals. Relief shading, edge glow, and Romanesco buds that grow wherever the corners are.</p>
+        <span class="go">Enter &rarr;</span>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span>&copy; 2026 Tallan Groberg Art</span>
+    <a href="index.html">Return to charted space</a>
+  </div>
+</footer>
+
+</body>
+</html>

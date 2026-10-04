@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Fractal Explorer - living 3D fractals</title>
+<style>
+  html, body { margin:0; padding:0; background:#05070c; min-height:100%;
+    font-family: Georgia, 'Times New Roman', serif; color:#e8e4da; }
+  body { display:flex; flex-direction:column; align-items:center; padding:22px 12px 40px; box-sizing:border-box; }
+  h1 { margin:6px 0 2px; font-size:21px; letter-spacing:3px; font-weight:normal; color:#f2ead8; text-align:center; }
+  #sub { margin:0 0 16px; font-size:12.5px; letter-spacing:1.5px; color:#9db8b4; text-align:center; }
+  #stage { width:min(1150px, 94vw); height:64vh; border:1px solid rgba(140,190,180,.4); border-radius:10px;
+    box-shadow:0 14px 44px rgba(0,0,0,.6); overflow:hidden; background:#070a12;
+    position:sticky; top:8px; z-index:20; touch-action:none; cursor:grab; }
+  #stage:active { cursor:grabbing; }
+  #bar { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center; margin:16px 0 6px; }
+  .btn { cursor:pointer; background:#14202e; color:#a8e6d9; border:1px solid rgba(140,220,200,.5);
+    border-radius:999px; padding:9px 18px; font-family:Georgia,serif; font-size:13.5px; letter-spacing:.5px; }
+  .btn:active { transform:scale(.97); }
+  .chk { display:flex; align-items:center; gap:8px; font-size:13px; color:#cfe0da; }
+  .chk input { accent-color:#2ea89a; width:16px; height:16px; }
+  #info { font-size:12px; color:#8496a8; letter-spacing:.5px; width:100%; text-align:center; }
+  #controls { margin-top:10px; width:min(680px, 94vw); background:rgba(10,16,26,.85);
+    border:1px solid rgba(140,190,180,.3); border-radius:14px; padding:14px 20px 8px;
+    display:grid; grid-template-columns:1fr 1fr; gap:4px 28px; box-sizing:border-box; }
+  @media (max-width:560px) { #controls { grid-template-columns:1fr; } }
+  .ctl { margin-bottom:10px; }
+  .ctl label { display:flex; justify-content:space-between; font-size:12px; letter-spacing:1px; color:#9db8b4; margin-bottom:3px; }
+  .ctl label span { color:#f2ead8; letter-spacing:0; }
+  .ctl input[type="range"] { width:100%; accent-color:#2ea89a; }
+  .ctl select { width:100%; background:#101a2a; color:#d8e4da; border:1px solid rgba(140,190,180,.4); border-radius:6px; padding:6px; font-family:Georgia,serif; font-size:13px; }
+  #note { font-size:12px; color:#6d8093; text-align:center; max-width:560px; line-height:1.55; margin:14px 0 0; }
+</style>
+</head>
+<body>
+<h1>FRACTAL EXPLORER</h1>
+<p id="sub">living fractals, raymarched in your browser</p>
+
+<div id="stage"></div>
+
+<div id="bar">
+  <div class="chk"><input id="spin" type="checkbox" checked><span>Slowly rotate</span></div>
+  <div class="chk"><input id="flow" type="checkbox"><span>Color flow</span></div>
+  <button class="btn" id="resetview">Reset view</button>
+  <button class="btn" id="exportstl">Export STL (3D print)</button>
+  <div id="info">Drag to orbit. Scroll or pinch to zoom.</div>
+</div>
+
+<div id="controls">
+  <div class="ctl"><label>FRACTAL</label>
+    <select id="ftype">
+      <option value="0">Sierpinski pyramid</option>
+      <option value="1">Crystal octahedron</option>
+      <option value="2">Cube lattice</option>
+    </select></div>
+  <div class="ctl"><label>COLORING</label>
+    <select id="pal">
+      <option value="0">Rainbow depth</option>
+      <option value="1">Ember</option>
+      <option value="2">Glacier</option>
+      <option value="3">Ultraviolet</option>
+    </select></div>
+  <div class="ctl"><label>DEPTH (ITERATIONS) <span id="v-iter">10</span></label>
+    <input id="iter" type="range" min="2" max="20" step="1" value="10"></div>
+  <div class="ctl"><label>SCALE <span id="v-scale">2.00</span></label>
+    <input id="fscale" type="range" min="1.55" max="2.45" step="0.01" value="2"></div>
+  <div class="ctl"><label>TWIST PER LEVEL <span id="v-twist">0&deg;</span></label>
+    <input id="twist" type="range" min="-35" max="35" step="0.5" value="0"></div>
+  <div class="ctl"><label>COLOR SPREAD <span id="v-spread">1.2</span></label>
+    <input id="spread" type="range" min="0.2" max="3" step="0.05" value="1.2"></div>
+  <div class="ctl"><label>RIM GLOW <span id="v-glow">40%</span></label>
+    <input id="glow" type="range" min="0" max="100" value="40"></div>
+  <div class="ctl"><label>LEAN <span id="v-lean">0%</span></label>
+    <input id="lean" type="range" min="-100" max="100" value="0"></div>
+  <div class="ctl"><label>BULGE <span id="v-bulge">0%</span></label>
+    <input id="bulge" type="range" min="-60" max="60" value="0"></div>
+  <div class="ctl"><label>SQUASH <span id="v-squash">1.00</span></label>
+    <input id="squash" type="range" min="45" max="220" value="100"></div>
+  <div class="ctl"><label>TUMBLE <span id="v-tumble">0&deg;</span></label>
+    <input id="tumble" type="range" min="-35" max="35" step="0.5" value="0"></div>
+  <div class="ctl"><label>MORPH INTO</label>
+    <select id="mtype">
+      <option value="0">Sierpinski pyramid</option>
+      <option value="1">Crystal octahedron</option>
+      <option value="2" selected>Cube lattice</option>
+    </select></div>
+  <div class="ctl"><label>MORPH <span id="v-morph">0%</span></label>
+    <input id="morph" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>LIGHT ANGLE <span id="v-lang2">40&deg;</span></label>
+    <input id="lang2" type="range" min="0" max="360" value="40"></div>
+  <div class="ctl"><label>FOG DEPTH <span id="v-fog">55%</span></label>
+    <input id="fog" type="range" min="0" max="100" value="55"></div>
+  <div class="ctl"><label>EDGE GLOW <span id="v-eglow">0%</span></label>
+    <input id="eglow" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>COLOR BY LEVEL <span id="v-band">0%</span></label>
+    <input id="band" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>STRIPE <span id="v-stripe">0%</span></label>
+    <input id="stripe" type="range" min="0" max="100" value="0"></div>
+  <div class="ctl"><label>RESOLUTION</label>
+    <select id="resmode">
+      <option value="auto" selected>Auto (smooth)</option>
+      <option value="1.5">Crisp 1.5x</option>
+      <option value="2">Sharp 2x</option>
+      <option value="3">Ultra 3x</option>
+    </select></div>
+  <div class="ctl"><label>EXPORT DETAIL <span id="v-exd">48</span></label>
+    <input id="exd" type="range" min="24" max="96" step="4" value="48"></div>
+  <div class="ctl"><label>ZOOM <span id="v-zoom">3.6</span></label>
+    <input id="zoom" type="range" min="1.6" max="8" step="0.05" value="3.6"></div>
+</div>
+
+<p id="note">Nothing here is a mesh. A shader walks light rays through the fractal's own mathematics and stops where they land,
+so the detail never runs out and every slider reshapes the structure itself. Drag the depth up and watch new levels bloom;
+bend the scale away from 2.00 and the pyramid fattens or starves; twist makes it corkscrew through its own levels.
+Color comes from how deep inside the structure each point lives, like the rainbow print that inspired this.
+The workshop sliders reshape the math itself: Lean grows it crooked, Bulge fattens or erodes it, Squash flattens or stretches it,
+Tumble braids the levels sideways, and Morph melts one fractal into another. Light angle swings the sun, fog depth swallows the
+deep levels, edge glow lights the thin struts from inside, color by level bands the rainbow level by level like the print,
+and stripe wraps it in contour rings. Resolution trades speed for sharpness: Auto keeps it smooth on any device, and the fixed
+settings supersample the render so edges come out carved instead of soft. Export STL carves the exact shape on screen into a real
+mesh using the same mathematics, ready for a slicer and a printer. Higher export detail means a finer mesh and a longer wait.</p>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+stage.appendChild(renderer.domElement);
+
+const FRAG = `
+precision highp float;
+uniform vec2 uRes;
+uniform vec3 uCamPos, uCamRight, uCamUp, uCamFwd;
+uniform int uType, uIter;
+uniform float uScale, uTwist, uSpread, uGlowAmt, uPhase;
+uniform int uPal;
+uniform int uTypeB;
+uniform float uLean, uBulge, uSquash, uTumble, uMorph;
+uniform float uDetail;
+uniform float uEdgeGlow, uLightAng, uFog, uBand, uStripe;
+
+float gTrap;
+float gLevel;
+float gSteps;
+
+mat3 rotY(float a){ float c=cos(a), s=sin(a); return mat3(c,0.,s, 0.,1.,0., -s,0.,c); }
+mat3 rotX(float a){ float c=cos(a), s=sin(a); return mat3(1.,0.,0., 0.,c,s, 0.,-s,c); }
+mat3 rotZ(float a){ float c=cos(a), s=sin(a); return mat3(c,s,0., -s,c,0., 0.,0.,1.); }
+
+float deTyped(vec3 p, int type, out float trap, out float level){
+  float scale = uScale;
+  vec3 offs = vec3(1.0) + uLean * vec3(1.0, 0.35, -0.65);
+  mat3 tw = rotY(uTwist);
+  mat3 tx = rotX(uTumble);
+  mat3 tz = rotZ(uTumble * 0.7);
+  trap = 1e9; level = 0.0;
+  for(int n=0; n<24; n++){
+    if(n >= uIter) break;
+    if(type == 0){
+      if(p.x + p.y < 0.0) p.xy = -p.yx;
+      if(p.x + p.z < 0.0) p.xz = -p.zx;
+      if(p.y + p.z < 0.0) p.yz = -p.zy;
+    } else if(type == 1){
+      p = abs(p);
+      if(p.x < p.y) p.xy = p.yx;
+      if(p.x < p.z) p.xz = p.zx;
+      if(p.y < p.z) p.yz = p.zy;
+    } else {
+      p = abs(p);
+      if(p.x < p.y) p.xy = p.yx;
+      if(p.y < p.z) p.yz = p.zy;
+    }
+    if(uTwist != 0.0 || uTumble != 0.0) p = tz * tx * tw * p;
+    p = p * scale - offs * (scale - 1.0);
+    float l = length(p);
+    if(l < trap){ trap = l; level = float(n); }
+  }
+  return (length(p) - 0.35 - uBulge) * pow(scale, -float(uIter));
+}
+
+float de(vec3 p){
+  vec3 q = p;
+  q.y *= uSquash;
+  float trapA, levelA;
+  float dA = deTyped(q, uType, trapA, levelA);
+  float d = dA, trap = trapA, level = levelA;
+  if(uMorph > 0.001){
+    float trapB, levelB;
+    float dB = deTyped(q, uTypeB, trapB, levelB);
+    d = mix(dA, dB, uMorph);
+    trap = mix(trapA, trapB, uMorph);
+    level = mix(levelA, levelB, uMorph);
+  }
+  gTrap = trap; gLevel = level;
+  return d / max(uSquash, 1.0);
+}
+
+vec3 calcNormal(vec3 p){
+  float e = 0.0012;
+  vec2 k = vec2(1.0, -1.0);
+  return normalize(
+    k.xyy * de(p + k.xyy * e) +
+    k.yyx * de(p + k.yyx * e) +
+    k.yxy * de(p + k.yxy * e) +
+    k.xxx * de(p + k.xxx * e));
+}
+
+vec3 palette(float t){
+  if(uPal == 0) return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 1.0, 1.0) + vec3(0.0, 0.33, 0.67)));
+  if(uPal == 1) return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.7, 0.4) + vec3(0.0, 0.12, 0.25)));
+  if(uPal == 2) return 0.5 + 0.5 * cos(6.28318 * (t * vec3(0.6, 0.9, 1.0) + vec3(0.45, 0.35, 0.15)));
+  return 0.5 + 0.5 * cos(6.28318 * (t * vec3(1.0, 0.5, 1.0) + vec3(0.6, 0.1, 0.75)));
+}
+
+void main(){
+  vec2 uv = (2.0 * gl_FragCoord.xy - uRes) / uRes.y;
+  vec3 ro = uCamPos;
+  vec3 rd = normalize(uCamFwd * 1.6 + uCamRight * uv.x + uCamUp * uv.y);
+  vec3 col = vec3(0.012, 0.016, 0.028);
+  float bg = 0.5 + 0.5 * rd.y;
+  col += vec3(0.010, 0.020, 0.030) * bg;
+
+  float t = 0.0;
+  float tmax = 14.0;
+  float d = 0.0;
+  int steps = 0;
+  for(int i=0; i<110; i++){
+    d = de(ro + rd * t);
+    steps = i;
+    if(d < 0.0007 * (1.0 + t) / uDetail) break;
+    t += d * 0.9;
+    if(t > tmax) break;
+  }
+  gSteps = float(steps);
+
+  if(t < tmax){
+    vec3 pos = ro + rd * t;
+    vec3 nor = calcNormal(pos);
+    float trap = gTrap;
+    vec3 smoothCol = palette(trap * uSpread * 0.55 + uPhase);
+    vec3 bandCol = palette(gLevel / max(float(uIter), 1.0) * 0.85 + uPhase);
+    vec3 base = mix(smoothCol, bandCol, uBand);
+    float st = 0.5 + 0.5 * sin(pos.y * 16.0);
+    base *= mix(1.0, 0.45 + 0.9 * st, uStripe);
+    vec3 lig = normalize(vec3(cos(uLightAng), 0.75, sin(uLightAng)));
+    float dif = clamp(dot(nor, lig), 0.0, 1.0);
+    float sky = clamp(0.5 + 0.5 * nor.y, 0.0, 1.0);
+    float rim = pow(1.0 - clamp(dot(nor, -rd), 0.0, 1.0), 3.0);
+    float ao = clamp(1.0 - gSteps / 110.0, 0.35, 1.0);
+    col = base * (0.22 + 0.85 * dif + 0.25 * sky) * ao;
+    col += vec3(0.45, 0.95, 0.85) * rim * uGlowAmt * (0.35 + 0.65 * dif);
+    float thin = clamp(1.15 - trap * 0.85, 0.0, 1.0);
+    col += base * thin * uEdgeGlow * 1.8;
+    float fogF = smoothstep(4.5, 13.5, t) * uFog;
+    col = mix(col, vec3(0.012, 0.016, 0.028), fogF);
+  }
+  col = pow(col, vec3(0.85));
+  gl_FragColor = vec4(col, 1.0);
+}
+`;
+
+const uniforms = {
+  uRes: { value: new THREE.Vector2(1, 1) },
+  uCamPos: { value: new THREE.Vector3() },
+  uCamRight: { value: new THREE.Vector3() },
+  uCamUp: { value: new THREE.Vector3() },
+  uCamFwd: { value: new THREE.Vector3() },
+  uType: { value: 0 },
+  uIter: { value: 10 },
+  uScale: { value: 2.0 },
+  uTwist: { value: 0.0 },
+  uSpread: { value: 1.2 },
+  uGlowAmt: { value: 0.4 },
+  uPhase: { value: 0.0 },
+  uPal: { value: 0 },
+  uTypeB: { value: 2 },
+  uLean: { value: 0.0 },
+  uBulge: { value: 0.0 },
+  uSquash: { value: 1.0 },
+  uTumble: { value: 0.0 },
+  uMorph: { value: 0.0 },
+  uEdgeGlow: { value: 0.0 },
+  uLightAng: { value: 0.7 },
+  uFog: { value: 0.55 },
+  uBand: { value: 0.0 },
+  uStripe: { value: 0.0 },
+  uDetail: { value: 1.0 }
+};
+const mat = new THREE.ShaderMaterial({ uniforms, fragmentShader: FRAG,
+  vertexShader: 'void main(){ gl_Position = vec4(position.xy, 0.0, 1.0); }' });
+const quadScene = new THREE.Scene();
+quadScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+const S = { theta: 0.7, phi: 1.05, dist: 3.6, target: new THREE.Vector3(0, 0.05, 0) };
+let quality = 1.0;
+let renderScale = 1.0;
+let autoRes = true;
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const eff = quality * renderScale;
+  renderer.setSize(Math.round(w * eff), Math.round(h * eff), false);
+  renderer.domElement.style.width = '100%';
+  renderer.domElement.style.height = '100%';
+  uniforms.uRes.value.set(Math.round(w * eff), Math.round(h * eff));
+  uniforms.uDetail.value = eff;
+}
+addEventListener('resize', resize);
+
+function updateCam() {
+  const sp = Math.sin(S.phi), cp = Math.cos(S.phi);
+  const pos = new THREE.Vector3(
+    S.target.x + S.dist * sp * Math.sin(S.theta),
+    S.target.y + S.dist * cp,
+    S.target.z + S.dist * sp * Math.cos(S.theta));
+  const fwd = S.target.clone().sub(pos).normalize();
+  const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0, 1, 0)).normalize();
+  const up = new THREE.Vector3().crossVectors(right, fwd).normalize();
+  uniforms.uCamPos.value.copy(pos);
+  uniforms.uCamFwd.value.copy(fwd);
+  uniforms.uCamRight.value.copy(right);
+  uniforms.uCamUp.value.copy(up);
+}
+
+let dragging = false, px = 0, py = 0, pinchD = 0;
+stage.addEventListener('pointerdown', e => { dragging = true; px = e.clientX; py = e.clientY; stage.setPointerCapture(e.pointerId); });
+stage.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  S.theta -= (e.clientX - px) * 0.007;
+  S.phi = Math.max(0.12, Math.min(2.9, S.phi - (e.clientY - py) * 0.007));
+  px = e.clientX; py = e.clientY;
+});
+stage.addEventListener('pointerup', () => { dragging = false; });
+stage.addEventListener('wheel', e => {
+  e.preventDefault();
+  S.dist = Math.max(1.6, Math.min(9, S.dist * (1 + Math.sign(e.deltaY) * 0.08)));
+  document.getElementById('zoom').value = S.dist;
+  document.getElementById('v-zoom').textContent = S.dist.toFixed(2);
+}, { passive: false });
+stage.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const d = Math.hypot(dx, dy);
+    if (pinchD > 0) {
+      S.dist = Math.max(1.6, Math.min(9, S.dist * pinchD / d));
+      document.getElementById('zoom').value = S.dist;
+      document.getElementById('v-zoom').textContent = S.dist.toFixed(2);
+    }
+    pinchD = d;
+  }
+}, { passive: true });
+stage.addEventListener('touchend', () => { pinchD = 0; });
+
+const $ = id => document.getElementById(id);
+function bindVal(id, vid, fn, fmt) {
+  const el = $(id), lab = $(vid);
+  const upd = () => { const v = parseFloat(el.value); lab.textContent = fmt ? fmt(v) : v; fn(v); };
+  el.addEventListener('input', upd); upd();
+  return upd;
+}
+$('ftype').addEventListener('change', e => { uniforms.uType.value = parseInt(e.target.value); });
+$('pal').addEventListener('change', e => { uniforms.uPal.value = parseInt(e.target.value); });
+bindVal('iter', 'v-iter', v => { uniforms.uIter.value = Math.round(v); });
+bindVal('fscale', 'v-scale', v => { uniforms.uScale.value = v; }, v => v.toFixed(2));
+bindVal('twist', 'v-twist', v => { uniforms.uTwist.value = v * Math.PI / 180; }, v => v + '°');
+bindVal('spread', 'v-spread', v => { uniforms.uSpread.value = v; }, v => v.toFixed(2));
+bindVal('glow', 'v-glow', v => { uniforms.uGlowAmt.value = v / 100; }, v => v + '%');
+bindVal('zoom', 'v-zoom', v => { S.dist = v; }, v => v.toFixed(2));
+bindVal('lean', 'v-lean', v => { uniforms.uLean.value = v / 100; }, v => v + '%');
+bindVal('bulge', 'v-bulge', v => { uniforms.uBulge.value = v / 100; }, v => v + '%');
+bindVal('squash', 'v-squash', v => { uniforms.uSquash.value = v / 100; }, v => (v / 100).toFixed(2));
+bindVal('tumble', 'v-tumble', v => { uniforms.uTumble.value = v * Math.PI / 180; }, v => v + '°');
+bindVal('morph', 'v-morph', v => { uniforms.uMorph.value = v / 100; }, v => v + '%');
+bindVal('lang2', 'v-lang2', v => { uniforms.uLightAng.value = v * Math.PI / 180; }, v => v + '°');
+bindVal('fog', 'v-fog', v => { uniforms.uFog.value = v / 100; }, v => v + '%');
+bindVal('eglow', 'v-eglow', v => { uniforms.uEdgeGlow.value = v / 100; }, v => v + '%');
+bindVal('band', 'v-band', v => { uniforms.uBand.value = v / 100; }, v => v + '%');
+bindVal('stripe', 'v-stripe', v => { uniforms.uStripe.value = v / 100; }, v => v + '%');
+$('mtype').addEventListener('change', e => { uniforms.uTypeB.value = parseInt(e.target.value); });
+$('resmode').addEventListener('change', e => {
+  if (e.target.value === 'auto') { autoRes = true; renderScale = 1.0; quality = 1.0; }
+  else { autoRes = false; renderScale = parseFloat(e.target.value); quality = 1.0; }
+  resize();
+});
+bindVal('exd', 'v-exd', () => {});
+
+// ---------- export: the same fractal math, carved into a real mesh ----------
+function jsTyped(px, py, pz, type, P) {
+  let x = px, y = py, z = pz;
+  const ox = 1 + P.lean, oy = 1 + P.lean * 0.35, oz = 1 - P.lean * 0.65;
+  const cy = Math.cos(P.twist), sy = Math.sin(P.twist);
+  const cx = Math.cos(P.tumble), sx = Math.sin(P.tumble);
+  const cz = Math.cos(P.tumble * 0.7), sz = Math.sin(P.tumble * 0.7);
+  for (let n = 0; n < P.iter; n++) {
+    if (type === 0) {
+      if (x + y < 0) { const t = x; x = -y; y = -t; }
+      if (x + z < 0) { const t = x; x = -z; z = -t; }
+      if (y + z < 0) { const t = y; y = -z; z = -t; }
+    } else if (type === 1) {
+      x = Math.abs(x); y = Math.abs(y); z = Math.abs(z);
+      if (x < y) { const t = x; x = y; y = t; }
+      if (x < z) { const t = x; x = z; z = t; }
+      if (y < z) { const t = y; y = z; z = t; }
+    } else {
+      x = Math.abs(x); y = Math.abs(y); z = Math.abs(z);
+      if (x < y) { const t = x; x = y; y = t; }
+      if (y < z) { const t = y; y = z; z = t; }
+    }
+    if (P.twist !== 0 || P.tumble !== 0) {
+      let nx = cy * x + sy * z, nz = -sy * x + cy * z; x = nx; z = nz;
+      let ny = cx * y - sx * z; nz = sx * y + cx * z; y = ny; z = nz;
+      nx = cz * x - sz * y; ny = sz * x + cz * y; x = nx; y = ny;
+    }
+    x = x * P.scale - ox * (P.scale - 1);
+    y = y * P.scale - oy * (P.scale - 1);
+    z = z * P.scale - oz * (P.scale - 1);
+  }
+  return (Math.hypot(x, y, z) - 0.35 - P.bulge) * Math.pow(P.scale, -P.iter);
+}
+function jsDE(x, y, z, P) {
+  const qy = y * P.squash;
+  let d = jsTyped(x, qy, z, P.type, P);
+  if (P.morph > 0.001) {
+    const dB = jsTyped(x, qy, z, P.typeB, P);
+    d = d * (1 - P.morph) + dB * P.morph;
+  }
+  return d;
+}
+
+async function exportSTL() {
+  const btn = $('exportstl');
+  const info = $('info');
+  btn.disabled = true;
+  const P = {
+    type: parseInt($('ftype').value), typeB: parseInt($('mtype').value),
+    iter: Math.round(parseFloat($('iter').value)),
+    scale: parseFloat($('fscale').value),
+    twist: parseFloat($('twist').value) * Math.PI / 180,
+    tumble: parseFloat($('tumble').value) * Math.PI / 180,
+    lean: parseFloat($('lean').value) / 100,
+    bulge: parseFloat($('bulge').value) / 100,
+    squash: parseFloat($('squash').value) / 100,
+    morph: parseFloat($('morph').value) / 100
+  };
+  const N = Math.round(parseFloat($('exd').value));
+  const B = 2.2, step = 2 * B / N, W = N + 1;
+  const field = new Float32Array(W * W * W);
+  const at = (i, j, k) => field[i + W * (j + W * k)];
+  for (let k = 0; k < W; k++) {
+    for (let j = 0; j < W; j++)
+      for (let i = 0; i < W; i++)
+        field[i + W * (j + W * k)] = jsDE(-B + i * step, -B + j * step, -B + k * step, P);
+    if (k % 4 === 0) { info.textContent = 'Carving the mesh: field ' + Math.round(k / W * 100) + '%'; await new Promise(r => setTimeout(r, 0)); }
+  }
+  info.textContent = 'Carving the mesh: stitching the surface';
+  await new Promise(r => setTimeout(r, 0));
+  const vertOf = new Int32Array(N * N * N).fill(-1);
+  const verts = [];
+  const cIdx = (i, j, k) => i + N * (j + N * k);
+  const corners = [[0,0,0],[1,0,0],[0,1,0],[1,1,0],[0,0,1],[1,0,1],[0,1,1],[1,1,1]];
+  const edges = [[0,1],[0,2],[0,4],[1,3],[1,5],[2,3],[2,6],[3,7],[4,5],[4,6],[5,7],[6,7]];
+  for (let k = 0; k < N; k++) for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    const cv = corners.map(c => at(i + c[0], j + c[1], k + c[2]));
+    let mask = 0;
+    cv.forEach((v, n) => { if (v < 0) mask |= (1 << n); });
+    if (mask === 0 || mask === 255) continue;
+    let ax = 0, ay = 0, az = 0, cnt = 0;
+    for (const [a, b] of edges) {
+      const va = cv[a], vb = cv[b];
+      if ((va < 0) === (vb < 0)) continue;
+      const t = va / (va - vb);
+      const pa = corners[a], pb = corners[b];
+      ax += -B + (i + pa[0] + (pb[0] - pa[0]) * t) * step;
+      ay += -B + (j + pa[1] + (pb[1] - pa[1]) * t) * step;
+      az += -B + (k + pa[2] + (pb[2] - pa[2]) * t) * step;
+      cnt++;
+    }
+    vertOf[cIdx(i, j, k)] = verts.length / 3;
+    verts.push(ax / cnt, ay / cnt, az / cnt);
+  }
+  const tris = [];
+  function quad(a, b, c, d, flip) {
+    if (a < 0 || b < 0 || c < 0 || d < 0) return;
+    if (flip) tris.push(a, b, c, b, d, c); else tris.push(a, c, b, b, c, d);
+  }
+  const getV = (i, j, k) => (i < 0 || j < 0 || k < 0 || i >= N || j >= N || k >= N) ? -1 : vertOf[cIdx(i, j, k)];
+  // quads around each grid edge that changes sign
+  for (let k = 0; k < W; k++) for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) {
+    const s = at(i, j, k) < 0;
+    if (i < N && ((at(i + 1, j, k) < 0) !== s))
+      quad(getV(i, j - 1, k - 1), getV(i, j, k - 1), getV(i, j - 1, k), getV(i, j, k), s);
+    if (j < N && ((at(i, j + 1, k) < 0) !== s))
+      quad(getV(i - 1, j, k - 1), getV(i - 1, j, k), getV(i, j, k - 1), getV(i, j, k), !s);
+    if (k < N && ((at(i, j, k + 1) < 0) !== s))
+      quad(getV(i - 1, j - 1, k), getV(i, j - 1, k), getV(i - 1, j, k), getV(i, j, k), s);
+  }
+  info.textContent = 'Writing the STL file';
+  await new Promise(r => setTimeout(r, 0));
+  const nTri = tris.length / 3;
+  const buf = new ArrayBuffer(84 + nTri * 50);
+  const dv = new DataView(buf);
+  dv.setUint32(80, nTri, true);
+  let o = 84;
+  const V = n => [verts[n * 3], verts[n * 3 + 1], verts[n * 3 + 2]];
+  for (let t = 0; t < nTri; t++) {
+    const A = V(tris[t * 3]), Bv = V(tris[t * 3 + 1]), C = V(tris[t * 3 + 2]);
+    const ux = Bv[0] - A[0], uy = Bv[1] - A[1], uz = Bv[2] - A[2];
+    const vx = C[0] - A[0], vy = C[1] - A[1], vz = C[2] - A[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+    dv.setFloat32(o, nx, true); dv.setFloat32(o + 4, ny, true); dv.setFloat32(o + 8, nz, true);
+    [A, Bv, C].forEach((v, m) => {
+      dv.setFloat32(o + 12 + m * 12, v[0], true);
+      dv.setFloat32(o + 16 + m * 12, v[1], true);
+      dv.setFloat32(o + 20 + m * 12, v[2], true);
+    });
+    o += 50;
+  }
+  const blob = new Blob([buf], { type: 'model/stl' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'fractal-explorer.stl';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  info.textContent = 'Exported ' + nTri.toLocaleString() + ' triangles. Units are scene units; scale it in your slicer.';
+  btn.disabled = false;
+}
+$('exportstl').addEventListener('click', exportSTL);
+$('resetview').addEventListener('click', () => {
+  S.theta = 0.7; S.phi = 1.05; S.dist = 3.6;
+  $('zoom').value = 3.6; $('v-zoom').textContent = '3.60';
+});
+$('spin').addEventListener('change', () => {});
+$('flow').addEventListener('change', () => {});
+
+let last = performance.now(), phase = 0, fpsT = 0, frames = 0;
+function loop(now) {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if ($('spin').checked && !dragging) S.theta += dt * 0.25;
+  if ($('flow').checked) phase = (phase + dt * 0.08) % 1;
+  uniforms.uPhase.value = phase;
+  updateCam();
+  renderer.render(quadScene, quadCam);
+  frames++; fpsT += dt;
+  if (fpsT > 2.5) {
+    const fps = frames / fpsT;
+    frames = 0; fpsT = 0;
+    if (autoRes) {
+      if (fps < 42 && quality > 0.45) { quality = Math.max(0.45, quality - 0.15); resize(); }
+      else if (fps > 57 && quality < 1.0) { quality = Math.min(1.0, quality + 0.1); resize(); }
+    }
+  }
+}
+resize();
+updateCam();
+requestAnimationFrame(loop);
+</script>
+<p style="font-size:12px; margin-top:18px; text-align:center;"><a href="art-tools.html" style="color:#6d8093; text-decoration:none;">&larr; back to the workshop</a></p>
+</body>
+</html>

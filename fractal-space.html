@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Fractal Space - a place to fly</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; background:#04050a; overflow:hidden;
+    font-family: Georgia, 'Times New Roman', serif; color:#e8e4da; }
+  canvas { display:block; width:100%; height:100%; touch-action:none; }
+  #hdr { position:fixed; top:14px; left:16px; z-index:5; pointer-events:none; }
+  #hdr h1 { margin:0; font-size:19px; letter-spacing:3px; font-weight:normal; color:#f2ead8; text-shadow:0 1px 8px #000; }
+  #hdr p { margin:2px 0 0 1px; font-size:12px; letter-spacing:1.5px; color:#9db8b4; text-shadow:0 1px 6px #000; }
+  #hint { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:5;
+    background:rgba(8,12,20,.78); border:1px solid rgba(140,190,180,.35); border-radius:10px;
+    padding:9px 16px; font-size:13px; letter-spacing:.4px; color:#d8d2c2; text-align:center;
+    pointer-events:none; max-width:88vw; }
+  #panel { position:fixed; right:16px; bottom:64px; z-index:7;
+    background:rgba(10,16,26,.88); border:1px solid rgba(140,190,180,.35); border-radius:12px;
+    padding:12px 14px; font-size:12.5px; color:#c8d4ce; width:196px;
+    box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  #panel label { display:block; margin:8px 0 3px; letter-spacing:1px; font-size:11px; color:#9db8b4; }
+  #panel label:first-child { margin-top:0; }
+  #panel input[type="range"] { width:100%; accent-color:#2ea89a; }
+  #panel select { width:100%; background:#101a2a; color:#d8e4da; border:1px solid rgba(140,190,180,.4);
+    border-radius:6px; padding:5px; font-family:Georgia,serif; font-size:12.5px; }
+  #panel .row { display:flex; align-items:center; gap:8px; margin-top:10px; }
+  #panel .row input { accent-color:#2ea89a; }
+  #val { color:#f2ead8; }
+  #stick { position:fixed; left:18px; bottom:64px; width:104px; height:104px; z-index:6; display:none;
+    border-radius:50%; border:1px solid rgba(140,190,180,.4); background:rgba(10,16,24,.4); }
+  #nub { position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px;
+    border-radius:50%; background:rgba(160,210,200,.5); }
+  @media (pointer:coarse) { #stick { display:block; } }
+</style>
+</head>
+<body>
+<div id="hdr"><h1>FRACTAL SPACE</h1><p>an infinite sculpture, rendered live</p></div>
+<div id="hint">Drag to look around &middot; WASD or arrows to fly &middot; Shift goes faster</div>
+<div id="panel">
+  <label>POWER <span id="val">8.0</span></label>
+  <input id="power" type="range" min="2" max="12" step="0.1" value="8">
+  <label>COLORS</label>
+  <select id="pal">
+    <option value="0">Deep space</option>
+    <option value="1">Ember</option>
+    <option value="2">Ultraviolet</option>
+  </select>
+  <div class="row"><input id="morph" type="checkbox"><span>Slowly morph</span></div>
+  <div class="row"><input id="spin" type="checkbox" checked><span>Slowly rotate</span></div>
+</div>
+<div id="stick"><div id="nub"></div></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(68, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 0.35, 3.1);
+
+const frag = `
+precision highp float;
+uniform vec2 u_res;
+uniform float u_time;
+uniform vec3 u_camPos;
+uniform vec3 u_right;
+uniform vec3 u_up;
+uniform vec3 u_back;
+uniform float u_power;
+uniform float u_morph;
+uniform float u_spin;
+uniform int u_pal;
+
+float g_iter;
+float g_power;
+vec3 g_trap;
+
+float de(vec3 pos) {
+  vec3 z = pos;
+  float dr = 1.0, r = 0.0;
+  g_trap = vec3(1e10);
+  for (int i = 0; i < 9; i++) {
+    r = length(z);
+    if (r > 2.0) break;
+    g_iter = float(i);
+    g_trap = min(g_trap, abs(z));
+    float theta = acos(clamp(z.z / max(r, 1e-6), -1.0, 1.0)) * g_power;
+    float phi = atan(z.y, z.x) * g_power;
+    dr = pow(r, g_power - 1.0) * g_power * dr + 1.0;
+    float zr = pow(r, g_power);
+    z = zr * vec3(sin(theta) * cos(phi), sin(phi) * sin(theta), cos(theta)) + pos;
+  }
+  return 0.5 * log(max(r, 1e-6)) * r / dr;
+}
+
+vec3 pal(float t) {
+  vec3 a = vec3(0.5), b = vec3(0.5), c = vec3(1.0);
+  vec3 d = vec3(0.00, 0.10, 0.20);
+  if (u_pal == 1) d = vec3(0.00, 0.33, 0.67);
+  if (u_pal == 2) d = vec3(0.30, 0.20, 0.20);
+  return a + b * cos(6.28318 * (c * t + d));
+}
+
+vec3 calcNormal(vec3 p, float dist) {
+  float e = 0.0006 * (0.5 + dist);
+  vec2 k = vec2(1.0, -1.0);
+  return normalize(k.xyy * de(p + k.xyy * e) + k.yyx * de(p + k.yyx * e) +
+                   k.yxy * de(p + k.yxy * e) + k.xxx * de(p + k.xxx * e));
+}
+
+float hash(vec3 p) {
+  p = fract(p * 0.3183099 + vec3(0.11, 0.17, 0.23));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+
+void main() {
+  vec2 uv = (gl_FragCoord.xy * 2.0 - u_res) / u_res.y;
+  vec3 ro = u_camPos;
+  vec3 rd = normalize(u_right * uv.x * 0.6745 + u_up * uv.y * 0.6745 - u_back);
+
+  float power = u_power;
+  float rot = 0.0;
+  if (u_morph > 0.5) power += sin(u_time * 0.15) * 0.9;
+  if (u_spin > 0.5) rot = u_time * 0.03;
+  g_power = power;
+  float cr = cos(rot), sr = sin(rot);
+
+  // background: deep gradient plus stars
+  vec3 bg = mix(vec3(0.012, 0.016, 0.035), vec3(0.03, 0.05, 0.085), rd.y * 0.5 + 0.5);
+  float st = hash(floor(rd * 260.0));
+  bg += vec3(0.9, 0.95, 1.0) * smoothstep(0.998, 1.0, st) * 0.7;
+
+  vec3 col = bg;
+  float t = 0.0, minD = 1e9;
+  vec3 hitPos = vec3(0.0);
+  float steps = 0.0;
+  bool hit = false;
+  for (int i = 0; i < 96; i++) {
+    vec3 p = ro + rd * t;
+    vec3 rp = p;
+    if (u_spin > 0.5 || u_morph > 0.5) rp = vec3(cr * p.x + sr * p.z, p.y, -sr * p.x + cr * p.z);
+    float d = de(rp);
+    minD = min(minD, d);
+    steps = float(i);
+    if (d < 0.0006 * (0.4 + t)) { hit = true; hitPos = rp; break; }
+    t += d * 0.9;
+    if (t > 14.0) break;
+  }
+
+  if (hit) {
+    vec3 n = calcNormal(hitPos, t);
+    n = vec3(cr * n.x - sr * n.z, n.y, sr * n.x + cr * n.z);
+    float shade = clamp(g_iter / 9.0, 0.0, 1.0);
+    vec3 base = pal(shade * 0.85 + g_trap.x * 0.55 + g_trap.y * 0.3);
+    vec3 L = normalize(vec3(0.55, 0.75, 0.35));
+    float dif = clamp(dot(n, L), 0.0, 1.0);
+    float ao = clamp(1.0 - steps / 96.0 * 0.75, 0.2, 1.0);
+    float fres = pow(1.0 - abs(dot(n, -rd)), 3.0);
+    col = base * (0.22 + 0.95 * dif) * ao;
+    col += pal(shade + 0.35) * fres * 0.55;
+    float fogF = smoothstep(4.0, 13.0, t);
+    col = mix(col, bg, fogF);
+  } else {
+    float glow = pow(clamp(1.0 - minD * 1.4, 0.0, 1.0), 3.0);
+    col += pal(0.55) * glow * 0.35;
+  }
+  col *= 1.0 - 0.28 * pow(length(uv * vec2(0.75, 1.0)), 2.2);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+const mat = new THREE.ShaderMaterial({
+  fragmentShader: frag,
+  uniforms: {
+    u_res: { value: new THREE.Vector2(1, 1) },
+    u_time: { value: 0 },
+    u_camPos: { value: new THREE.Vector3() },
+    u_right: { value: new THREE.Vector3(1, 0, 0) },
+    u_up: { value: new THREE.Vector3(0, 1, 0) },
+    u_back: { value: new THREE.Vector3(0, 0, 1) },
+    u_power: { value: 8.0 },
+    u_morph: { value: 0 },
+    u_spin: { value: 1 },
+    u_pal: { value: 0 }
+  }
+});
+scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat));
+const quadCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+// ---- controls (same feel as the gallery) ----
+let yaw = 0.0, pitch = -0.08;
+const keys = new Set();
+addEventListener('keydown', e => keys.add(e.code));
+addEventListener('keyup', e => keys.delete(e.code));
+const el = renderer.domElement;
+let dragging = false, lx = 0, ly = 0;
+el.addEventListener('pointerdown', e => { dragging = true; lx = e.clientX; ly = e.clientY; });
+addEventListener('pointerup', () => dragging = false);
+addEventListener('pointermove', e => {
+  if (!dragging) return;
+  yaw -= (e.clientX - lx) * 0.004;
+  pitch -= (e.clientY - ly) * 0.004;
+  pitch = THREE.MathUtils.clamp(pitch, -1.45, 1.45);
+  lx = e.clientX; ly = e.clientY;
+});
+const stick = document.getElementById('stick'), nub = document.getElementById('nub');
+let sx = 0, sy = 0, sActive = false;
+stick.addEventListener('pointerdown', e => { sActive = true; stick.setPointerCapture(e.pointerId); });
+stick.addEventListener('pointermove', e => {
+  if (!sActive) return;
+  const r = stick.getBoundingClientRect();
+  let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+  const m = Math.hypot(dx, dy), max = r.width / 2;
+  if (m > max) { dx *= max / m; dy *= max / m; }
+  sx = dx / max; sy = dy / max;
+  nub.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+});
+const sEnd = () => { sActive = false; sx = sy = 0; nub.style.transform = ''; };
+stick.addEventListener('pointerup', sEnd);
+stick.addEventListener('pointercancel', sEnd);
+
+const powerEl = document.getElementById('power'), valEl = document.getElementById('val');
+powerEl.addEventListener('input', () => { mat.uniforms.u_power.value = parseFloat(powerEl.value); valEl.textContent = parseFloat(powerEl.value).toFixed(1); });
+document.getElementById('pal').addEventListener('change', e => mat.uniforms.u_pal.value = parseInt(e.target.value));
+document.getElementById('morph').addEventListener('change', e => mat.uniforms.u_morph.value = e.target.checked ? 1 : 0);
+document.getElementById('spin').addEventListener('change', e => mat.uniforms.u_spin.value = e.target.checked ? 1 : 0);
+
+let scale = matchMedia('(pointer:coarse)').matches ? 0.6 : 0.85;
+function resize() {
+  renderer.setSize(Math.floor(innerWidth * scale), Math.floor(innerHeight * scale), false);
+  mat.uniforms.u_res.value.set(Math.floor(innerWidth * scale), Math.floor(innerHeight * scale));
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+resize();
+
+const SCALES = [1.0, 0.85, 0.7, 0.55, 0.45, 0.35];
+let sIdx = SCALES.indexOf(scale); if (sIdx < 0) sIdx = 1;
+let ema = 16, frameCount = 0;
+const clock = new THREE.Clock();
+function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  ema = ema * 0.95 + dt * 1000 * 0.05;
+  if (++frameCount >= 70) {
+    frameCount = 0;
+    if (ema > 24 && sIdx < SCALES.length - 1) { sIdx++; scale = SCALES[sIdx]; resize(); }
+    else if (ema < 15.5 && sIdx > 0) { sIdx--; scale = SCALES[sIdx]; resize(); }
+  }
+  camera.rotation.order = 'YXZ';
+  camera.rotation.set(pitch, yaw, 0);
+  const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  const v = new THREE.Vector3();
+  const boost = (keys.has('ShiftLeft') || keys.has('ShiftRight')) ? 3 : 1;
+  const sp = 0.55 * boost;
+  if (keys.has('KeyW') || keys.has('ArrowUp')) v.add(fwd);
+  if (keys.has('KeyS') || keys.has('ArrowDown')) v.sub(fwd);
+  if (keys.has('KeyA') || keys.has('ArrowLeft')) v.sub(right);
+  if (keys.has('KeyD') || keys.has('ArrowRight')) v.add(right);
+  if (keys.has('KeyE') || keys.has('Space')) v.add(up);
+  if (keys.has('KeyQ')) v.sub(up);
+  if (sActive) { v.addScaledVector(fwd, -sy); v.addScaledVector(right, sx); }
+  if (v.lengthSq() > 0) {
+    v.normalize().multiplyScalar(sp * dt);
+    camera.position.add(v);
+    const d = camera.position.length();
+    if (d > 6.0) camera.position.multiplyScalar(6.0 / d);
+    if (d < 0.55) camera.position.multiplyScalar(0.55 / Math.max(d, 0.001));
+  }
+  camera.updateMatrixWorld();
+  const me = camera.matrixWorld.elements;
+  mat.uniforms.u_right.value.set(me[0], me[1], me[2]);
+  mat.uniforms.u_up.value.set(me[4], me[5], me[6]);
+  mat.uniforms.u_back.value.set(me[8], me[9], me[10]);
+  mat.uniforms.u_camPos.value.copy(camera.position);
+  mat.uniforms.u_time.value = clock.elapsedTime;
+  renderer.render(scene, quadCam);
+}
+loop();
+</script>
+</body>
+</html>
