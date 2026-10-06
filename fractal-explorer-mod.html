@@ -210,6 +210,8 @@ the same Form Lab settings, so what you print is what you see. Exports now carve
 smoothed surface: take the GLB into Nomad Sculpt on the iPad for the friendliest editing, or the STL to any slicer.
 High detail takes a while to carve; that patience is the mesh being built to last.</p>
 
+<p id="exportnote">A word on exporting: the mesh is built from the skin you see, and a few settings can carve that skin away entirely, which is when an export reports that nothing is in range. If that happens, ease these off first: Bulge pulled far back (it erodes the struts), Shell wall (it keeps only a thin wall), the orb cutters (they remove whole regions), fractal Scale pushed far from 2.00, and Depth set very low. Thin features also need enough Export detail to land between mesh points, so raising Export detail rescues shells and lattices that vanish at low settings.</p>
+
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
 </script>
@@ -888,13 +890,17 @@ function buildExportParams() {
 
 async function carveMesh(P, N, info) {
   const B = 2.2, step = 2 * B / N, W = N + 1;
+  // The raymarched skin has zero thickness, so the raw field never crosses
+  // zero and a sign-based carver would find nothing at all. Aim a hair
+  // inside the skin so the mesh wraps the shape you actually see.
+  const deSkin = (x, y, z) => jsDE(x, y, z, P) - step * 0.45;
   // coarse field first: fine points far from the surface inherit its sign, so the
   // expensive fractal math only runs in a safety band around the skin.
   const C = 40, CW = C + 1, cStep = 2 * B / C;
   const cfield = new Float32Array(CW * CW * CW);
   const cAt = (i, j, k) => cfield[i + CW * (j + CW * k)];
   for (let k = 0; k < CW; k++) for (let j = 0; j < CW; j++) for (let i = 0; i < CW; i++)
-    cfield[i + CW * (j + CW * k)] = jsDE(-B + i * cStep, -B + j * cStep, -B + k * cStep, P);
+    cfield[i + CW * (j + CW * k)] = deSkin(-B + i * cStep, -B + j * cStep, -B + k * cStep, P);
   const thr = 2.2 * cStep;
   function fineVal(x, y, z) {
     const gx = Math.min(C - 1, Math.max(0, Math.floor((x + B) / (2 * B) * C)));
@@ -908,7 +914,7 @@ async function carveMesh(P, N, info) {
     }
     if (mn > thr) return 10;
     if (mx < -thr) return -10;
-    return jsDE(x, y, z, P);
+    return deSkin(x, y, z);
   }
   function fieldLayer(k) {
     const f = new Float32Array(W * W);
@@ -1038,7 +1044,7 @@ async function carveAndExport(kind) {
     await new Promise(r => setTimeout(r, 0));
     const { verts, tris } = await carveMesh(P, N, info);
     const nTri = tris.length / 3;
-    if (!nTri) { info.textContent = 'Nothing to export: no surface in range. Pull back the erosion or bulge.'; return; }
+    if (!nTri) { info.textContent = 'Nothing to export: no surface in range. Ease off Bulge (pulled back), Shell wall, or the orb cutters, then try again.'; return; }
     const pos = new Float32Array(verts);
     if ($('smooth').checked) {
       info.textContent = 'Smoothing the surface for sculpting';
