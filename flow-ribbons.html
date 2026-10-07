@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flow Ribbon Sculptor - wind carved strands for Nomad</title>
+<meta name="robots" content="noindex">
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: #0b0e13; color: #dfe6f2; font-family: "Avenir Next", "Segoe UI", system-ui, sans-serif; }
+  #stage { position: sticky; top: 0; z-index: 5; height: 56vh; background: #04060a; }
+  #stage canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+  #hud { position: absolute; top: 10px; left: 12px; font-size: 12px; letter-spacing: .08em; color: #9fb4d8;
+    background: rgba(4,6,10,.55); padding: 6px 9px; border-radius: 6px; pointer-events: none; }
+  header { padding: 14px 18px 4px; }
+  h1 { font-size: 20px; letter-spacing: .14em; margin: 0; font-weight: 700; }
+  #sub { color: #8fa3c8; margin: 4px 0 0; font-size: 13px; }
+  #bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 18px; align-items: center; }
+  #bar button { background: #1a2334; color: #dfe6f2; border: 1px solid #33456b; border-radius: 8px;
+    padding: 8px 12px; font-size: 13px; cursor: pointer; }
+  #bar button:hover { background: #243354; }
+  #bar label.chk { font-size: 13px; color: #b9c8e4; display: flex; gap: 6px; align-items: center; margin-right: 4px; }
+  #info { font-size: 12px; color: #8fa3c8; min-height: 16px; padding: 0 18px; }
+  #controls { padding: 6px 18px 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px 18px; max-width: 1100px; }
+  .ctl label { display: block; font-size: 11px; letter-spacing: .1em; color: #9fb4d8; margin-bottom: 5px; }
+  .ctl label span { float: right; color: #dfe6f2; }
+  .ctl input[type=range] { width: 100%; accent-color: #7ba2e8; }
+  .ctl select { width: 100%; background: #141c2c; color: #dfe6f2; border: 1px solid #33456b; border-radius: 6px; padding: 6px; font-size: 13px; }
+  .sec { grid-column: 1 / -1; font-size: 12px; letter-spacing: .14em; color: #7ba2e8; border-bottom: 1px solid #22304d; padding-bottom: 4px; margin-top: 10px; }
+  #note, #exportnote { max-width: 1100px; padding: 0 18px; color: #a9bcdc; font-size: 13px; line-height: 1.55; }
+  footer { padding: 10px 18px 26px; font-size: 12px; color: #62779f; }
+  footer a { color: #8fa3c8; }
+</style>
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "ypmarpwtnb");
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZH4ZYE3Z47"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-ZH4ZYE3Z47');
+</script>
+</head>
+<body>
+<div id="stage"><div id="hud">FLOW RIBBON SCULPTOR</div></div>
+<header>
+<h1>FLOW RIBBON SCULPTOR</h1>
+<p id="sub">strands carried on invisible currents, frozen mid drift for Nomad Sculpt</p>
+</header>
+<div id="bar">
+  <button id="rebuild">Rebuild flow</button>
+  <button id="newseed">New seed</button>
+  <label class="chk"><input id="spin" type="checkbox"> Slowly rotate</label>
+  <button id="exportglb">Export GLB (for Nomad)</button>
+  <button id="exportstl">Export STL</button>
+</div>
+<p id="info">Releasing the first strands. Drag to orbit, scroll or pinch to zoom.</p>
+<div id="controls">
+  <div class="sec">THE CURRENT (an invisible flow field)</div>
+  <div class="ctl"><label>SOURCE SHAPE</label>
+    <select id="source">
+      <option value="0" selected>Fountain disc</option>
+      <option value="1">Orb cloud</option>
+      <option value="2">Ring gate</option>
+      <option value="3">Falling veil</option>
+    </select></div>
+  <div class="ctl"><label>CURRENT TYPE</label>
+    <select id="field">
+      <option value="0" selected>Curl currents (layered)</option>
+      <option value="1">Classic sine weather</option>
+    </select></div>
+  <div class="ctl"><label>FLOW SCALE <span id="v-fscale">110%</span></label>
+    <input id="fscale" type="range" min="40" max="260" value="110"></div>
+  <div class="ctl"><label>CURRENT STRENGTH <span id="v-strength">100%</span></label>
+    <input id="strength" type="range" min="30" max="220" value="100"></div>
+  <div class="ctl"><label>FIELD PHASE <span id="v-phase">0%</span></label>
+    <input id="phase" type="range" min="0" max="628" value="0"></div>
+  <div class="ctl"><label>UPWARD DRIFT <span id="v-rise">25%</span></label>
+    <input id="rise" type="range" min="-100" max="120" value="25"></div>
+  <div class="sec">THE STRANDS (ribbons riding the current)</div>
+  <div class="ctl"><label>STRAND COUNT <span id="v-strands">90</span></label>
+    <input id="strands" type="range" min="10" max="240" value="90"></div>
+  <div class="ctl"><label>STRAND LENGTH <span id="v-slength">100%</span></label>
+    <input id="slength" type="range" min="30" max="220" value="100"></div>
+  <div class="ctl"><label>RIBBON WIDTH <span id="v-width">22%</span></label>
+    <input id="width" type="range" min="4" max="90" value="22"></div>
+  <div class="ctl"><label>SOLID THICKNESS <span id="v-thick">40%</span></label>
+    <input id="thick" type="range" min="0" max="120" value="40"></div>
+  <div class="ctl"><label>RIBBON TWIST <span id="v-twist">30%</span></label>
+    <input id="twist" type="range" min="0" max="200" value="30"></div>
+  <div class="ctl"><label>COLORING</label>
+    <select id="coloring">
+      <option value="0" selected>Sculpt grey</option>
+      <option value="1">Clay</option>
+      <option value="2">Reef tint</option>
+      <option value="3">Painted picture</option>
+    </select></div>
+  <div class="ctl"><label>YOUR PAINTING (for Painted picture)</label>
+    <input id="paintfile" type="file" accept="image/*"></div>
+</div>
+<p id="note">Under every ribbon here is an invisible current, a smooth mathematical wind that swirls the whole volume.
+Release a strand anywhere in it and the current carries the strand downstream, bending, braiding, and folding it
+around its neighbors. Freeze the moment and you have wind carved fins, drifting kelp, or energy hair, all as one solid
+mesh. Source shape chooses where the strands are born: a fountain disc throws them upward like a plume, an orb cloud
+wraps them around a sphere, a ring gate pours them through a halo, and a falling veil drops them in a sheet. Flow scale
+tightens or loosens the swirls, field phase rotates the whole weather system into a new arrangement, and upward drift
+biases the current toward the sky or the deep. New seed reshuffles the birthplaces inside the same weather. Export GLB
+takes the frozen drift into Nomad Sculpt with vertex colors that fade along each strand; STL covers printers.
+Solid thickness now gives every strand a real body with capped ends, ready to sculpt and far friendlier to print; set it
+to zero and the strands go back to pure sheets. Curl currents replace the old sine weather with layered, braiding flow,
+and Painted picture coloring lets you load one of your own paintings so each strand is born wearing its colors.</p>
+<p id="exportnote">A word on exporting: ribbons are thin sheets, so they sculpt and render beautifully and print best with
+a little width on them. If a strand ever looks too fragile, Ribbon width is the fix, not strand count.</p>
+<footer>Part of the workshop: <a href="https://tallangroberg.com/art-tools.html">all the tools</a></footer>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+
+const $ = id => document.getElementById(id);
+const info = m => { $('info').textContent = m; };
+
+// ---------- Flow field and strand growth (pure) ----------
+// PURE-START
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function potential(x, y, z, s, t) {
+  return [
+    Math.sin(y * s + 1.7 + t) * Math.cos(z * s * 1.3 - t * 0.6) + 0.5 * Math.sin(y * s * 2.3 + 0.4) * Math.cos(z * s * 2.9),
+    Math.sin(z * s + 0.6 + t * 0.8) * Math.cos(x * s * 1.3 + t * 0.4) + 0.5 * Math.sin(z * s * 2.3 + 2.0) * Math.cos(x * s * 2.9),
+    Math.sin(x * s + 2.1 + t * 0.6) * Math.cos(y * s * 1.3 - t * 0.3) + 0.5 * Math.sin(x * s * 2.3 + 4.1) * Math.cos(y * s * 2.9)
+  ];
+}
+function flowAt(x, y, z, P) {
+  let fx, fy, fz;
+  if (P.field === 1) {
+    const s = P.fscale, t = P.phase;
+    fx = Math.sin(y * s + t) + Math.cos(z * s * 1.3 + t * 0.7);
+    fy = Math.sin(z * s + t * 0.8) + Math.cos(x * s * 1.3);
+    fz = Math.sin(x * s + t * 0.6) + Math.cos(y * s * 1.3);
+  } else {
+    const s = P.fscale, t = P.phase, e = 0.06;
+    const px1 = potential(x + e, y, z, s, t), px0 = potential(x - e, y, z, s, t);
+    const py1 = potential(x, y + e, z, s, t), py0 = potential(x, y - e, z, s, t);
+    const pz1 = potential(x, y, z + e, s, t), pz0 = potential(x, y, z - e, s, t);
+    fx = (py1[2] - py0[2]) / (2 * e) - (pz1[1] - pz0[1]) / (2 * e);
+    fy = (pz1[0] - pz0[0]) / (2 * e) - (px1[2] - px0[2]) / (2 * e);
+    fz = (px1[1] - px0[1]) / (2 * e) - (py1[0] - py0[0]) / (2 * e);
+  }
+  fy += P.rise * 1.6;
+  const L = Math.hypot(fx, fy, fz) || 1;
+  const m = P.strength / L;
+  return [fx * m, fy * m, fz * m];
+}
+function spawnPoint(kind, rnd) {
+  const a = rnd() * Math.PI * 2;
+  if (kind === 0) { const r = Math.sqrt(rnd()) * 0.95; return [Math.cos(a) * r, -1.05, Math.sin(a) * r]; }
+  if (kind === 1) {
+    const u = rnd() * 2 - 1, th = rnd() * Math.PI * 2, w = Math.sqrt(1 - u * u), r = 0.55 + rnd() * 0.45;
+    return [Math.cos(th) * w * r, u * r, Math.sin(th) * w * r];
+  }
+  if (kind === 2) { const r = 1.0; const wob = (rnd() - 0.5) * 0.12; return [Math.cos(a) * r, wob, Math.sin(a) * r]; }
+  return [(rnd() * 2 - 1) * 1.15, 1.05, (rnd() * 2 - 1) * 0.25];
+}
+function growStrands(P, seed) {
+  const rnd = mulberry32(seed);
+  const steps = Math.floor(200 * P.slength);
+  const ds = 0.022;
+  const strands = [];
+  for (let n = 0; n < P.strands; n++) {
+    let p = spawnPoint(P.source, rnd);
+    const line = [p[0], p[1], p[2]];
+    for (let i = 0; i < steps; i++) {
+      const v = flowAt(p[0], p[1], p[2], P);
+      p = [p[0] + v[0] * ds, p[1] + v[1] * ds, p[2] + v[2] * ds];
+      if (!isFinite(p[0]) || Math.hypot(p[0], p[1], p[2]) > 3.2) break;
+      line.push(p[0], p[1], p[2]);
+    }
+    if (line.length >= 12) strands.push(line);
+  }
+  return strands;
+}
+// PURE-END
+
+// ---------- Stage ----------
+const stage = $('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x04060a);
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+camera.position.set(1.9, 0.9, 3.5);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+scene.add(new THREE.AmbientLight(0x8899bb, 0.55));
+const keyL = new THREE.DirectionalLight(0xffffff, 1.6); keyL.position.set(2.5, 3, 2); scene.add(keyL);
+const fill = new THREE.DirectionalLight(0xaac4ff, 0.5); fill.position.set(-3, -1, -2); scene.add(fill);
+let mesh = null, rebuildTimer = null, gSeed = 7;
+
+let paintPixels = null, paintW = 0, paintH = 0;
+function samplePaint(x, z) {
+  if (!paintPixels) return null;
+  const u = Math.max(0, Math.min(0.999, x / 3.0 + 0.5));
+  const v = Math.max(0, Math.min(0.999, z / 3.0 + 0.5));
+  const ix = Math.floor(u * paintW), iy = Math.floor(v * paintH);
+  const i = (iy * paintW + ix) * 4;
+  return [paintPixels[i] / 255, paintPixels[i + 1] / 255, paintPixels[i + 2] / 255];
+}
+function buildGeometry(P) {
+  const strands = growStrands(P, gSeed);
+  const width = P.width / 100 * 0.16;
+  const thickHalf = P.thick / 100 * 0.09;
+  const solid = thickHalf > 0.001;
+  const twistTotal = P.twist / 100 * Math.PI;
+  const posArr = [], colArr = [], idxArr = [];
+  let base = 0;
+  const rnd = mulberry32(gSeed + 99);
+  for (const line of strands) {
+    const n = line.length / 3;
+    const shade = 0.85 + rnd() * 0.3;
+    const birth = samplePaint(line[0], line[2]);
+    let side = new THREE.Vector3(1, 0, 0);
+    const pts = [];
+    for (let i = 0; i < n; i++) pts.push(new THREE.Vector3(line[i * 3], line[i * 3 + 1], line[i * 3 + 2]));
+    const vertsPer = solid ? 4 : 2;
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const tan = (i < n - 1 ? pts[i + 1].clone().sub(pts[i]) : pts[i].clone().sub(pts[i - 1])).normalize();
+      side = side.clone().sub(tan.clone().multiplyScalar(side.dot(tan)));
+      if (side.lengthSq() < 0.05) side = new THREE.Vector3(0, 1, 0).sub(tan.clone().multiplyScalar(tan.y));
+      side.normalize();
+      const tw = side.clone().applyAxisAngle(tan, twistTotal * t);
+      const taper = 0.35 + 0.65 * Math.sin(Math.PI * Math.min(1, t * 1.05));
+      const wHalf = width * taper;
+      let r, g, bcol;
+      if (P.coloring === 3 && birth) {
+        r = birth[0] * (0.55 + 0.45 * t) + 0.12 * t;
+        g = birth[1] * (0.55 + 0.45 * t) + 0.12 * t;
+        bcol = birth[2] * (0.55 + 0.45 * t) + 0.13 * t;
+      } else if (P.coloring === 1) { r = 0.45 + 0.45 * t; g = 0.32 + 0.30 * t; bcol = 0.24 + 0.18 * t; }
+      else if (P.coloring === 2 || P.coloring === 3) { r = 0.30 + 0.55 * t; g = 0.45 + 0.45 * t; bcol = 0.48 + 0.30 * t; }
+      else { const sc = (0.40 + 0.54 * t) * shade; r = sc; g = sc * 1.01; bcol = sc * 1.05; }
+      r = Math.min(1, r); g = Math.min(1, g); bcol = Math.min(1, bcol);
+      if (solid) {
+        let nrm = new THREE.Vector3().crossVectors(tan, tw);
+        if (nrm.lengthSq() < 0.001) nrm = new THREE.Vector3(0, 0, 1);
+        nrm.normalize();
+        const hHalf = thickHalf * taper;
+        const c = [
+          pts[i].clone().add(tw.clone().multiplyScalar(wHalf)).add(nrm.clone().multiplyScalar(hHalf)),
+          pts[i].clone().sub(tw.clone().multiplyScalar(wHalf)).add(nrm.clone().multiplyScalar(hHalf)),
+          pts[i].clone().sub(tw.clone().multiplyScalar(wHalf)).sub(nrm.clone().multiplyScalar(hHalf)),
+          pts[i].clone().add(tw.clone().multiplyScalar(wHalf)).sub(nrm.clone().multiplyScalar(hHalf))
+        ];
+        for (const v of c) { posArr.push(v.x, v.y, v.z); colArr.push(r, g, bcol); }
+        if (i < n - 1) {
+          const k = base + i * 4;
+          for (let e = 0; e < 4; e++) {
+            const a = k + e, b = k + (e + 1) % 4, a2 = a + 4, b2 = b + 4;
+            idxArr.push(a, b, b2, a, b2, a2);
+          }
+        }
+      } else {
+        const a = pts[i].clone().add(tw.clone().multiplyScalar(wHalf));
+        const b = pts[i].clone().sub(tw.clone().multiplyScalar(wHalf));
+        posArr.push(a.x, a.y, a.z, b.x, b.y, b.z);
+        colArr.push(r, g, bcol, r, g, bcol);
+        if (i < n - 1) {
+          const k = base + i * 2;
+          idxArr.push(k, k + 1, k + 2, k + 1, k + 3, k + 2);
+        }
+      }
+    }
+    if (solid && n > 1) {
+      const first = base, last = base + (n - 1) * 4;
+      idxArr.push(first, first + 2, first + 1, first, first + 3, first + 2);
+      idxArr.push(last, last + 1, last + 2, last, last + 2, last + 3);
+    }
+    base += n * vertsPer;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(posArr), 3));
+  geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colArr), 3));
+  geo.setIndex(idxArr);
+  geo.computeVertexNormals();
+  return { geo, strandCount: strands.length };
+}
+function readParams() {
+  return {
+    source: parseInt($('source').value), field: parseInt($('field').value), fscale: parseFloat($('fscale').value) / 100,
+    strength: parseFloat($('strength').value) / 100, phase: parseFloat($('phase').value) / 100,
+    rise: parseFloat($('rise').value) / 100, strands: parseInt($('strands').value),
+    slength: parseFloat($('slength').value) / 100, width: parseFloat($('width').value),
+    thick: parseFloat($('thick').value),
+    twist: parseFloat($('twist').value), coloring: parseInt($('coloring').value)
+  };
+}
+function rebuild() {
+  const P = readParams();
+  info('Releasing the strands. One moment.');
+  setTimeout(() => {
+    const t0 = performance.now();
+    const { geo, strandCount } = buildGeometry(P);
+    if (mesh) { mesh.geometry.dispose(); scene.remove(mesh); }
+    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0.0, side: THREE.DoubleSide }));
+    scene.add(mesh);
+    info(strandCount + ' strands frozen mid drift in ' + Math.round(performance.now() - t0)
+      + ' ms. GLB and STL export this exact drift.');
+  }, 10);
+}
+function scheduleRebuild() {
+  clearTimeout(rebuildTimer);
+  rebuildTimer = setTimeout(rebuild, 250);
+}
+
+// ---------- Controls ----------
+$('fscale').addEventListener('input', e => { $('v-fscale').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('strength').addEventListener('input', e => { $('v-strength').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('phase').addEventListener('input', e => { $('v-phase').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('rise').addEventListener('input', e => { $('v-rise').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('strands').addEventListener('input', e => { $('v-strands').textContent = e.target.value; scheduleRebuild(); });
+$('slength').addEventListener('input', e => { $('v-slength').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('width').addEventListener('input', e => { $('v-width').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('thick').addEventListener('input', e => { $('v-thick').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('field').addEventListener('change', rebuild);
+$('paintfile').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  img.onload = () => {
+    const cv = document.createElement('canvas');
+    cv.width = 256; cv.height = 256;
+    cv.getContext('2d').drawImage(img, 0, 0, 256, 256);
+    const data = cv.getContext('2d').getImageData(0, 0, 256, 256);
+    paintPixels = data.data; paintW = 256; paintH = 256;
+    URL.revokeObjectURL(img.src);
+    if (parseInt($('coloring').value) !== 3) $('coloring').value = '3';
+    rebuild();
+    info('Painting loaded. Each strand now carries the color it was born under.');
+  };
+  img.src = URL.createObjectURL(file);
+});
+$('twist').addEventListener('input', e => { $('v-twist').textContent = e.target.value + '%'; scheduleRebuild(); });
+$('source').addEventListener('change', rebuild);
+$('coloring').addEventListener('change', rebuild);
+$('rebuild').addEventListener('click', rebuild);
+$('newseed').addEventListener('click', () => {
+  gSeed = (gSeed * 1103515245 + 12345) % 2147483648;
+  rebuild();
+  info('New seed. Same weather, new birthplaces.');
+});
+
+// ---------- Export ----------
+function downloadBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$('exportglb').addEventListener('click', () => {
+  if (!mesh) return;
+  info('Building the GLB. One moment.');
+  mesh.updateMatrixWorld(true);
+  mesh.userData = { flowRibbonRecipe: JSON.parse(JSON.stringify({ ...readParams(), seed: gSeed })) };
+  new GLTFExporter().parse(mesh,
+    result => { downloadBlob(new Blob([result], { type: 'model/gltf-binary' }), 'flow-ribbons.glb'); info('GLB saved. It opens in Nomad Sculpt ready to refine.'); },
+    () => { info('GLB export hit a snag. The STL export covers the same mesh.'); },
+    { binary: true });
+});
+$('exportstl').addEventListener('click', () => {
+  if (!mesh) return;
+  info('Building the STL. One moment.');
+  const geo = mesh.geometry.index ? mesh.geometry.toNonIndexed() : mesh.geometry;
+  const pos = geo.attributes.position;
+  const tris = pos.count / 3;
+  const buf = new ArrayBuffer(84 + tris * 50);
+  const view = new DataView(buf);
+  view.setUint32(80, tris, true);
+  let off = 84;
+  for (let t = 0; t < pos.count; t += 3) {
+    const ax = pos.array[t * 3], ay = pos.array[t * 3 + 1], az = pos.array[t * 3 + 2];
+    const bx = pos.array[t * 3 + 3], by = pos.array[t * 3 + 4], bz = pos.array[t * 3 + 5];
+    const cx = pos.array[t * 3 + 6], cy = pos.array[t * 3 + 7], cz = pos.array[t * 3 + 8];
+    let nx = (by - ay) * (cz - az) - (bz - az) * (cy - ay);
+    let ny = (bz - az) * (cx - ax) - (bx - ax) * (cz - az);
+    let nz = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+    const L = Math.hypot(nx, ny, nz) || 1; nx /= L; ny /= L; nz /= L;
+    view.setFloat32(off, nx, true); view.setFloat32(off + 4, ny, true); view.setFloat32(off + 8, nz, true);
+    view.setFloat32(off + 12, ax, true); view.setFloat32(off + 16, ay, true); view.setFloat32(off + 20, az, true);
+    view.setFloat32(off + 24, bx, true); view.setFloat32(off + 28, by, true); view.setFloat32(off + 32, bz, true);
+    view.setFloat32(off + 36, cx, true); view.setFloat32(off + 40, cy, true); view.setFloat32(off + 44, cz, true);
+    view.setUint16(off + 48, 0, true);
+    off += 50;
+  }
+  downloadBlob(new Blob([buf], { type: 'model/stl' }), 'flow-ribbons.stl');
+  info('STL saved with ' + tris.toLocaleString() + ' triangles.');
+});
+
+// ---------- Loop ----------
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize);
+function tick() {
+  requestAnimationFrame(tick);
+  if ($('spin').checked && mesh) mesh.rotation.y += 0.0035;
+  controls.update();
+  renderer.render(scene, camera);
+}
+resize();
+rebuild();
+tick();
+</script>
+</body>
+</html>
